@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { 
   Chart as ChartJS, 
   ArcElement, 
@@ -15,7 +14,7 @@ import {
   RadialLinearScale,
   Filler
 } from 'chart.js';
-import { Pie, Bar, Line, Radar } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
 import '../styles/ExecutiveDashboard.css';
 
 // Register ChartJS components

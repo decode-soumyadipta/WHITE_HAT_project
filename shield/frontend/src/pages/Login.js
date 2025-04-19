@@ -1,31 +1,33 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '../utils/AuthContext';
-import './Login.css';
+import '../styles/Login.css';
 
-function Login() {
+function Login({ setIsLoggedIn }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, isAuthenticated } = useAuth();
+  const [formError, setFormError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setFormError('');
+    setLoading(true);
     
     try {
       await login(email, password);
+      setIsLoggedIn(true);
       navigate('/');
     } catch (err) {
       setError(err.message || 'Failed to login. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
-
-  if (isAuthenticated) {
-    navigate('/');
-    return null;
-  }
 
   return (
     <div className="login-container">
