@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
   const fetchUserProfile = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/auth/profile', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/profile`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -33,11 +33,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Add updateUser function
+  const updateUser = (userData) => {
+    setUser(userData);
+  };
+
   const login = async (email, password) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post('/auth/login', { email, password });
+      const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/login`, { email, password });
       const { token: authToken, user: userData } = response.data;
       
       // Store token and user data
@@ -58,7 +63,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post('/auth/register', userData);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/register`, userData);
       setLoading(false);
       return true;
     } catch (err) {
@@ -86,7 +91,8 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        fetchUserProfile
+        fetchUserProfile,
+        updateUser
       }}
     >
       {children}

@@ -43,7 +43,6 @@ function App() {
               <Route path="/login" element={!isLoggedIn ? <Login setIsLoggedIn={setIsLoggedIn} /> : <Navigate to="/" />} />
               <Route path="/register" element={!isLoggedIn ? <Register setIsLoggedIn={setIsLoggedIn} /> : <Navigate to="/" />} />
               
-              {/* Protected routes */}
               <Route path="/" element={isLoggedIn ? <Dashboard /> : <Navigate to="/login" />} />
               <Route path="/organizations" element={isLoggedIn ? <Organizations /> : <Navigate to="/login" />} />
               <Route path="/organizations/:id" element={isLoggedIn ? <OrganizationDetail /> : <Navigate to="/login" />} />
@@ -53,6 +52,9 @@ function App() {
               <Route path="/test-cases/:id" element={isLoggedIn ? <TestCaseDetail /> : <Navigate to="/login" />} />
               <Route path="/threat-intelligence" element={isLoggedIn ? <ThreatIntelligence /> : <Navigate to="/login" />} />
               <Route path="/profile" element={isLoggedIn ? <Profile /> : <Navigate to="/login" />} />
+              
+              {/* Default redirect to login if not logged in */}
+              <Route path="*" element={<Navigate to={isLoggedIn ? "/" : "/login"} />} />
             </Routes>
           </main>
         </div>
