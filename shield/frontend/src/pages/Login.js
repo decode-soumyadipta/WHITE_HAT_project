@@ -1,37 +1,30 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import AuthContext from '../utils/AuthContext';
 import '../styles/Login.css';
 
-function Login({ setIsLoggedIn }) {
+function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setFormError('');
     setLoading(true);
     
-    try {
-      await login(email, password);
-      setIsLoggedIn(true);
-      navigate('/');
-    } catch (err) {
-      setError(err.message || 'Failed to login. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    // Bypass authentication completely
+    // Just set a demo token and navigate to dashboard
+    localStorage.setItem('token', 'demo-token');
+    
+    // Small delay to show loading state
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 500);
   };
 
   return (
     <div className="login-container">
-      <div className="background-image" style={{ backgroundImage: `url('https://thumbs.dreamstime.com/b/abstract-cybersecurity-concept-design-dark-background-green-tones-generated-ai-abstract-cybersecurity-concept-design-dark-352765010.jpg')` }}></div>
+      <div className="background-image" style={{ backgroundColor: '#0a1014' }}></div>
       <div className="binary-overlay"></div>
       <div className="shield-overlay"></div>
       
@@ -74,19 +67,13 @@ function Login({ setIsLoggedIn }) {
             />
           </div>
 
-          {(formError || error) && (
-            <div className="login-error">
-              {formError || error}
-            </div>
-          )}
-
           <div>
             <button
               type="submit"
               disabled={loading}
               className="login-button"
             >
-              Sign in
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
           

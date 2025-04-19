@@ -1,15 +1,24 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const Layout = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard' },
     { name: 'Vulnerabilities', href: '/vulnerabilities' },
     { name: 'Test Cases', href: '/test-cases' },
+    { name: 'Profile', href: '/profile' },
     { name: 'Settings', href: '/settings' },
   ];
+
+  const handleLogout = () => {
+    // Clear any stored token
+    localStorage.removeItem('token');
+    // Redirect to login page
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -60,11 +69,11 @@ const Layout = ({ children }) => {
                     </svg>
                   </button>
 
-                  <button
-                    type="button"
+                  <Link
+                    to="/profile"
                     className="ml-3 bg-white flex text-sm rounded-full focus:outline-none"
                   >
-                    <span className="sr-only">Open user menu</span>
+                    <span className="sr-only">Go to profile</span>
                     <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
                       <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                         <path
@@ -74,6 +83,13 @@ const Layout = ({ children }) => {
                         />
                       </svg>
                     </div>
+                  </Link>
+
+                  <button
+                    onClick={handleLogout}
+                    className="ml-4 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-md"
+                  >
+                    Logout
                   </button>
                 </div>
               </div>

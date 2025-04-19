@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -10,7 +10,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import axios from 'axios';
 
 ChartJS.register(
   CategoryScale,
@@ -22,32 +21,61 @@ ChartJS.register(
   Legend
 );
 
+// Mock data for the dashboard
+const mockDashboardData = {
+  risk_score: 72,
+  vulnerability_stats: {
+    critical: 3,
+    high: 15,
+    medium: 42,
+    low: 27
+  },
+  test_case_stats: {
+    total: 256,
+    passed: 198,
+    failed: 38,
+    pending: 20
+  },
+  trends: {
+    'Mon': { critical: 5, high: 12, medium: 38, low: 22 },
+    'Tue': { critical: 4, high: 14, medium: 40, low: 25 },
+    'Wed': { critical: 3, high: 15, medium: 42, low: 27 },
+    'Thu': { critical: 2, high: 13, medium: 44, low: 26 },
+    'Fri': { critical: 3, high: 15, medium: 42, low: 27 },
+    'Sat': { critical: 2, high: 10, medium: 38, low: 24 },
+    'Sun': { critical: 3, high: 15, medium: 42, low: 27 }
+  },
+  recent_vulnerabilities: [
+    {
+      id: 1,
+      title: 'SQL Injection Vulnerability',
+      description: 'User input not properly sanitized in search feature',
+      severity: 'critical'
+    },
+    {
+      id: 2,
+      title: 'Cross-Site Scripting (XSS)',
+      description: 'Reflected XSS in comment submission form',
+      severity: 'high'
+    },
+    {
+      id: 3,
+      title: 'Insecure Direct Object Reference',
+      description: 'User can access other users\' data by manipulating request parameters',
+      severity: 'high'
+    },
+    {
+      id: 4,
+      title: 'Missing Authentication',
+      description: 'API endpoint lacks proper authentication checks',
+      severity: 'critical'
+    }
+  ]
+};
+
 const Dashboard = () => {
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get('/api/dashboard/overview');
-        setDashboardData(response.data);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  // Use the mock data directly instead of fetching
+  const dashboardData = mockDashboardData;
 
   const trendData = {
     labels: Object.keys(dashboardData.trends),
