@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Organizations</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOrganizationModal">
+            <i class="fas fa-plus me-1"></i> Add Organization
+        </button>
+    </div>
+    
+    <div class="row">
+        {% for org in organizations %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ org.name }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ org.industry }}</h6>
+                    <p class="card-text">{{ org.description }}</p>
+                    
+                    {% if org.tech_stack %}
+                    <div class="mb-3">
+                        <strong>Tech Stack:</strong>
+                        <div class="mt-2">
+                            {% for tech in org.tech_stack.strip('[]"\'').split(',') %}
+                            <span class="badge bg-secondary me-1 mb-1">{{ tech.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between mt-3">
+                        <a href="{{ url_for('vulnerabilities', organization_id=org.id) }}" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-bug me-1"></i> Vulnerabilities
+                        </a>
+                        <a href="{{ url_for('test_cases', organization_id=org.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-vial me-1"></i> Test Cases
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No organizations found. Click "Add Organization" to create one.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Organization Modal -->
+<div class="modal fade" id="addOrganizationModal" tabindex="-1" aria-labelledby="addOrganizationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addOrganizationModalLabel">Add Organization</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addOrganizationForm">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="industry" class="form-label">Industry</label>
+                        <input type="text" class="form-control" id="industry">
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="techStack" class="form-label">Tech Stack</label>
+                        <input type="text" class="form-control" id="techStack" placeholder="Comma-separated list, e.g. Python, React, PostgreSQL">
+                        <div class="form-text">Enter technologies separated by commas</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveOrganization">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add organization form submission
+        document.getElementById('saveOrganization').addEventListener('click', function() {
+            // Form validation and submission would go here
+            // This is a mockup - in a real app, you'd use AJAX to submit to your backend
+            alert('Organization added successfully! (This is just a demo)');
+            // Hide modal
+            var modal = bootstrap.Modal.getInstance(document.getElementById('addOrganizationModal'));
+            modal.hide();
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,119 +1,180 @@
 from app.models import Organization, Vulnerability
 from app.extensions import db
-from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+import openai
 import json
 import os
 
-def analyze_threats(org_id, tech_stack):
-    """
-    Analyze threat intelligence feeds and identify relevant threats based on the organization's tech stack.
+class ThreatIntelligenceService:
+    """Service for gathering and analyzing threat intelligence data."""
     
-    Args:
-        org_id (int): The organization ID
-        tech_stack (list): List of technologies used by the organization
+    def __init__(self):
+        self.api_key = os.environ.get('OPENAI_API_KEY')
+        if not self.api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is required")
         
-    Returns:
-        dict: Analysis results including identified threats
-    """
-    # Get organization data
-    organization = Organization.query.get(org_id)
-    if not organization:
-        return {'error': 'Organization not found'}
-    
-    # Prepare the tech stack for analysis
-    if isinstance(tech_stack, str):
+        # Configure OpenAI
+        openai.api_key = self.api_key
+        
+    def get_threats_for_technologies(self, technologies):
+        """Get threat intelligence for specific technologies."""
+        tech_list = ", ".join(technologies) if isinstance(technologies, list) else technologies
+        
+        # Create a prompt for the language model
+        prompt = f"""
+        You are a cybersecurity expert. Provide information about the top 3 most critical 
+        security vulnerabilities or threats for the following technologies:
+        
+        {tech_list}
+        
+        For each vulnerability:
+        - Title
+        - Brief description
+        - CVSS score (0.0-10.0)
+        - Severity (critical, high, medium, low)
+        
+        Format as JSON with an array of threats.
+        """
+        
         try:
-            tech_stack = json.loads(tech_stack)
-        except:
-            tech_stack = [tech_stack]
-    
-    # Initialize LangChain components
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo",
-        temperature=0,
-        api_key=os.environ.get('OPENAI_API_KEY')
-    )
-    
-    # Create a prompt template for threat analysis
-    template = """
-    You are a cybersecurity expert analyzing potential threats for an organization based on their technology stack.
-    
-    Organization: {organization_name}
-    Industry: {industry}
-    Technology Stack: {tech_stack}
-    
-    Task:
-    1. Identify the top 5 most critical security vulnerabilities or threats that are relevant to this organization's tech stack
-    2. For each vulnerability:
-       - Provide a title and brief description
-       - Assign a CVSS score (0.0-10.0)
-       - Determine severity (critical, high, medium, low)
-       - List affected systems within the tech stack
-       - Suggest a remediation plan
-    
-    Format your response as a JSON object with the following structure:
-    {{"threats": [
-        {{
-            "title": "Vulnerability Title",
-            "description": "Description of the vulnerability",
-            "cvss_score": 8.5,
-            "severity": "high",
-            "affected_systems": ["system1", "system2"],
-            "remediation_plan": "Steps to remediate this vulnerability"
-        }}
-        // Additional vulnerabilities...
-    ]}}
-    """
-    
-    prompt = ChatPromptTemplate.from_template(template)
-    
-    # Prepare the message
-    message = prompt.format(
-        organization_name=organization.name,
-        industry=organization.industry,
-        tech_stack=", ".join(tech_stack)
-    )
-    
-    # Get the response from the LLM
-    response = llm.invoke(message)
-    
-    # Parse the response to extract threat data
-    try:
-        # Extract JSON from the response
-        response_text = response.content
-        json_start = response_text.find('{')
-        json_end = response_text.rfind('}') + 1
-        if json_start >= 0 and json_end > json_start:
-            json_text = response_text[json_start:json_end]
-            threat_data = json.loads(json_text)
-        else:
-            threat_data = {'threats': []}
-            
-        # Store threats in the database
-        for threat in threat_data.get('threats', []):
-            vulnerability = Vulnerability(
-                title=threat.get('title'),
-                description=threat.get('description'),
-                cvss_score=threat.get('cvss_score'),
-                severity=threat.get('severity'),
-                affected_systems=json.dumps(threat.get('affected_systems', [])),
-                remediation_plan=threat.get('remediation_plan'),
-                organization_id=org_id,
-                status='open'
+            # Use OpenAI Completion API directly
+            response = openai.Completion.create(
+                engine="text-davinci-003",
+                prompt=prompt,
+                max_tokens=1000,
+                temperature=0,
+                top_p=1,
+                frequency_penalty=0,
+                presence_penalty=0
             )
-            db.session.add(vulnerability)
+            
+            # Extract content from response
+            response_text = response.choices[0].text.strip()
+            
+            # Parse JSON data from response
+            try:
+                # Check if response is already JSON formatted
+                data = json.loads(response_text)
+                return data.get('threats', [])
+            except json.JSONDecodeError:
+                # If not JSON, extract JSON portion if possible
+                json_start = response_text.find('{')
+                json_end = response_text.rfind('}') + 1
+                if json_start >= 0 and json_end > json_start:
+                    json_text = response_text[json_start:json_end]
+                    try:
+                        data = json.loads(json_text)
+                        return data.get('threats', [])
+                    except:
+                        pass
+                
+                # Return simplified format if JSON parsing fails
+                return [{
+                    "title": "Manual security assessment required",
+                    "description": "The system was unable to automatically detect specific threats. A manual security assessment is recommended.",
+                    "cvss_score": 5.0,
+                    "severity": "medium"
+                }]
+        except Exception as e:
+            # Handle API errors gracefully
+            print(f"OpenAI API error: {str(e)}")
+            return [{
+                "title": "API Error",
+                "description": f"Error connecting to threat intelligence service: {str(e)}",
+                "cvss_score": 5.0,
+                "severity": "medium"
+            }]
+    
+    def analyze_organization_threats(self, org_id):
+        """Analyze threats for a specific organization based on their tech stack."""
+        organization = Organization.query.get(org_id)
+        if not organization:
+            return {'error': 'Organization not found'}
         
-        db.session.commit()
+        # Get tech stack from organization
+        try:
+            tech_stack = json.loads(organization.tech_stack) if organization.tech_stack else []
+        except:
+            tech_stack = []
         
-        # Return the threat analysis results
-        return {
-            'organization_id': org_id,
-            'tech_stack': tech_stack,
-            'threats': threat_data.get('threats', []),
-            'count': len(threat_data.get('threats', []))
-        }
+        if not tech_stack:
+            return {'warning': 'No technology stack defined for this organization'}
         
-    except Exception as e:
-        db.session.rollback()
-        return {'error': str(e)} 
+        # Create a prompt for the organization analysis
+        prompt = f"""
+        You are a cybersecurity expert analyzing potential threats for an organization.
+        
+        Organization: {organization.name}
+        Industry: {organization.industry}
+        Technology Stack: {', '.join(tech_stack)}
+        
+        Identify the top 5 critical security vulnerabilities relevant to this organization.
+        For each vulnerability:
+        - Title and brief description
+        - CVSS score (0.0-10.0)
+        - Severity level
+        - Affected systems
+        - Remediation plan
+        
+        Format as JSON with an array of threats.
+        """
+        
+        try:
+            # Use OpenAI Completion API directly
+            response = openai.Completion.create(
+                engine="text-davinci-003",
+                prompt=prompt,
+                max_tokens=1500,
+                temperature=0,
+                top_p=1,
+                frequency_penalty=0,
+                presence_penalty=0
+            )
+            
+            # Extract content from response
+            response_text = response.choices[0].text.strip()
+            
+            # Parse the response
+            try:
+                # Try to extract JSON from the response
+                json_start = response_text.find('{')
+                json_end = response_text.rfind('}') + 1
+                
+                if json_start >= 0 and json_end > json_start:
+                    json_text = response_text[json_start:json_end]
+                    threat_data = json.loads(json_text)
+                else:
+                    threat_data = {'threats': []}
+                    
+                # Store threats in the database
+                for threat in threat_data.get('threats', []):
+                    vulnerability = Vulnerability(
+                        title=threat.get('title'),
+                        description=threat.get('description'),
+                        cvss_score=threat.get('cvss_score'),
+                        severity=threat.get('severity'),
+                        affected_systems=json.dumps(threat.get('affected_systems', [])),
+                        remediation_plan=threat.get('remediation_plan'),
+                        organization_id=org_id,
+                        status='open'
+                    )
+                    db.session.add(vulnerability)
+                
+                db.session.commit()
+                
+                return {
+                    'organization_id': org_id,
+                    'tech_stack': tech_stack,
+                    'threats': threat_data.get('threats', []),
+                    'count': len(threat_data.get('threats', []))
+                }
+                
+            except Exception as e:
+                db.session.rollback()
+                return {'error': str(e)}
+        except Exception as e:
+            return {'error': f"OpenAI API error: {str(e)}"}
+
+# Legacy function kept for compatibility
+def analyze_threats(org_id, tech_stack):
+    service = ThreatIntelligenceService()
+    return service.analyze_organization_threats(org_id) 

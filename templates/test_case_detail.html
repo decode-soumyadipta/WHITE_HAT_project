@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('test_cases') }}">Test Cases</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ test_case.name }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h2">{{ test_case.name }}</h1>
+            <div>
+                <button id="runTestBtn" class="btn btn-success me-2">Run Test</button>
+                <button class="btn btn-outline-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6>Description</h6>
+                        <p>{{ test_case.description }}</p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Target</h6>
+                            <div class="bg-light p-2 rounded">
+                                <code>{{ test_case.target }}</code>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Payload</h6>
+                            <div class="bg-light p-2 rounded">
+                                <code>{{ test_case.payload }}</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Expected Result</h6>
+                        <p>{{ test_case.expected_result }}</p>
+                    </div>
+                    
+                    {% if test_case.result %}
+                    <div class="mb-4">
+                        <h6>Result</h6>
+                        <div class="alert alert-{% if test_case.status == 'completed' %}success{% elif test_case.status == 'failed' %}danger{% else %}warning{% endif %} mb-0">
+                            <p class="mb-0">{{ test_case.result }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if test_case.status == 'completed' or test_case.status == 'failed' %}
+                    <div class="mb-4">
+                        <h6>Test Output</h6>
+                        <div class="bg-dark text-light p-3 rounded">
+                            <pre class="mb-0"><code>{{ test_output or "No detailed output available" }}</code></pre>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if vulnerability %}
+                    <div>
+                        <h6>Associated Vulnerability</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <a href="{{ url_for('vulnerability_detail', vulnerability_id=vulnerability.id) }}" class="text-decoration-none">
+                                        {{ vulnerability.title }}
+                                    </a>
+                                </h5>
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <span class="badge bg-{% if vulnerability.severity == 'critical' %}danger{% elif vulnerability.severity == 'high' %}warning{% elif vulnerability.severity == 'medium' %}primary{% else %}secondary{% endif %}">
+                                        {{ vulnerability.severity }}
+                                    </span>
+                                </h6>
+                                <p class="card-text">{{ vulnerability.description|truncate(100) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Summary</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Organization</dt>
+                        <dd class="col-sm-8">{{ organization.name }}</dd>
+                        
+                        <dt class="col-sm-4">Type</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-primary">{{ test_case.type }}</span>
+                        </dd>
+                        
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-{% if test_case.status == 'completed' %}success{% elif test_case.status == 'failed' %}danger{% elif test_case.status == 'running' %}warning{% else %}secondary{% endif %}">
+                                {{ test_case.status }}
+                            </span>
+                        </dd>
+                        
+                        <dt class="col-sm-4">Created</dt>
+                        <dd class="col-sm-8">{{ test_case.created_at }}</dd>
+                        
+                        <dt class="col-sm-4">Last Run</dt>
+                        <dd class="col-sm-8">{{ test_case.updated_at or 'Never run' }}</dd>
+                        
+                        <dt class="col-sm-4">Generated By</dt>
+                        <dd class="col-sm-8">{% if 'AI' in test_case.name %}AI Assistant{% else %}Manual{% endif %}</dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled timeline">
+                        <li class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Test Case Created</h6>
+                                <p class="mb-0 small text-muted">{{ test_case.created_at }}</p>
+                            </div>
+                        </li>
+                        
+                        {% if test_case.status != 'pending' %}
+                        <li class="timeline-item">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Test Started</h6>
+                                <p class="mb-0 small text-muted">{{ test_case.updated_at }}</p>
+                            </div>
+                        </li>
+                        {% endif %}
+                        
+                        {% if test_case.status == 'completed' or test_case.status == 'failed' %}
+                        <li class="timeline-item">
+                            <div class="timeline-marker {% if test_case.status == 'completed' %}bg-success{% else %}bg-danger{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Test {{ test_case.status|title }}</h6>
+                                <p class="mb-0 small text-muted">{{ test_case.updated_at }}</p>
+                            </div>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 1.5rem;
+    }
+    
+    .timeline:before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        height: 100%;
+        width: 2px;
+        background-color: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -1.5rem;
+        top: 0.25rem;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Simulate running a test
+    document.getElementById('runTestBtn').addEventListener('click', function() {
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Running...';
+        
+        // Simulate a test run with a delay
+        setTimeout(function() {
+            alert('Test execution completed! Page will reload with results.');
+            window.location.reload();
+        }, 3000);
+    });
+</script>
+{% endblock %} 

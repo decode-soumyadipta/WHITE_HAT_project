@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="fas fa-robot me-2"></i> AI Agent Automation
+        </h1>
+    </div>
+    
+    <p class="text-muted mb-4">
+        Automate security assessments with AI agents that simulate real-world attacks in a sandbox environment.
+    </p>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Configure Assessment</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('ai_agent_automation') }}">
+                        <div class="mb-3">
+                            <label for="organization_id" class="form-label">Organization</label>
+                            <select class="form-select" id="organization_id" name="organization_id" required>
+                                {% for org in organizations %}
+                                <option value="{{ org.id }}" {% if selected_org == org.id %}selected{% endif %}>
+                                    {{ org.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="assessment_type" class="form-label">Assessment Type</label>
+                            <select class="form-select" id="assessment_type" name="assessment_type">
+                                <option value="vuln_scan">Vulnerability Scan</option>
+                                <option value="pentest">Penetration Test</option>
+                                <option value="threat_hunt">Threat Hunting</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="tech_stack" class="form-label">Technology Stack</label>
+                            <textarea class="form-control" id="tech_stack" name="tech_stack" rows="3" placeholder="Enter technologies, separated by commas">{{ tech_stack|join(', ') }}</textarea>
+                            <div class="form-text">
+                                Example: Python, React, PostgreSQL, Docker
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-play me-2"></i> Run Assessment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">How It Works</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6><i class="fas fa-shield-alt me-2"></i> Process Overview</h6>
+                        <ol>
+                            <li>The system analyzes your technology stack</li>
+                            <li>AI agents generate targeted test cases</li>
+                            <li>Tests are executed in a sandbox environment</li>
+                            <li>Results are analyzed to identify vulnerabilities</li>
+                        </ol>
+                    </div>
+                    
+                    <div>
+                        <h6><i class="fas fa-sitemap me-2"></i> Assessment Types</h6>
+                        <ul>
+                            <li><strong>Vulnerability Scan:</strong> Identifies common security issues</li>
+                            <li><strong>Penetration Test:</strong> Simulates targeted attacks</li>
+                            <li><strong>Threat Hunting:</strong> Searches for evidence of compromises</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            {% if assessment_results %}
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-{% if assessment_results.vulnerabilities_found > 0 %}warning{% else %}success{% endif %} text-white">
+                    <h5 class="mb-0">
+                        <i class="fas {% if assessment_results.vulnerabilities_found > 0 %}fa-exclamation-triangle{% else %}fa-check{% endif %} me-2"></i>
+                        Assessment Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-{% if assessment_results.vulnerabilities_found > 0 %}warning{% else %}success{% endif %} mb-4">
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <strong>
+                                    {% if assessment_results.vulnerabilities_found > 0 %}
+                                    {{ assessment_results.vulnerabilities_found }} vulnerabilities found!
+                                    {% else %}
+                                    No vulnerabilities found!
+                                    {% endif %}
+                                </strong>
+                                <div>
+                                    {% if assessment_results.vulnerabilities_found > 0 %}
+                                    Review the detailed findings and take action to secure your systems.
+                                    {% else %}
+                                    Your systems appear to be secure against the tested attack vectors.
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Assessment Summary</h6>
+                        <table class="table table-bordered">
+                            <tbody>
+                                <tr>
+                                    <th>Assessment ID</th>
+                                    <td>{{ assessment_results.assessment_id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Organization</th>
+                                    <td>
+                                        {% for org in organizations %}
+                                        {% if org.id == assessment_results.organization_id %}
+                                        {{ org.name }}
+                                        {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Type</th>
+                                    <td>{{ assessment_results.assessment_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Test Cases</th>
+                                    <td>{{ assessment_results.test_cases_count }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Vulnerabilities</th>
+                                    <td>{{ assessment_results.vulnerabilities_found }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <td>{{ assessment_results.timestamp }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if assessment_results.vulnerabilities_found > 0 %}
+                    <div>
+                        <h6>Vulnerability Summary</h6>
+                        <div class="list-group">
+                            {% for vuln in assessment_results.vulnerabilities %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">{{ vuln.title }}</h6>
+                                    <span class="badge bg-{% if vuln.severity == 'critical' %}danger{% elif vuln.severity == 'high' %}warning{% elif vuln.severity == 'medium' %}primary{% else %}secondary{% endif %}">
+                                        {{ vuln.severity }}
+                                    </span>
+                                </div>
+                                <div>{{ vuln.description }}</div>
+                                {% if vuln.remediation_plan %}
+                                <div class="mt-2">
+                                    <strong>Remediation:</strong> {{ vuln.remediation_plan }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="test-cases-tab" data-bs-toggle="tab" data-bs-target="#test-cases-tab-pane" type="button" role="tab" aria-controls="test-cases-tab-pane" aria-selected="true">Test Cases</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="vulnerabilities-tab" data-bs-toggle="tab" data-bs-target="#vulnerabilities-tab-pane" type="button" role="tab" aria-controls="vulnerabilities-tab-pane" aria-selected="false">Vulnerabilities</button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="test-cases-tab-pane" role="tabpanel" aria-labelledby="test-cases-tab" tabindex="0">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">AI-Generated Test Cases</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                {% for test_case in test_cases %}
+                                <a href="{{ url_for('test_case_detail', test_case_id=test_case.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0">{{ test_case.name }}</h6>
+                                        <span class="badge bg-{% if test_case.status == 'completed' %}success{% elif test_case.status == 'failed' %}danger{% elif test_case.status == 'running' %}warning{% else %}secondary{% endif %}">
+                                            {{ test_case.status }}
+                                        </span>
+                                    </div>
+                                    <div class="mb-2">{{ test_case.description }}</div>
+                                    <div class="d-flex small text-muted">
+                                        <div class="me-3">Type: {{ test_case.type }}</div>
+                                        <div>Target: {{ test_case.target }}</div>
+                                    </div>
+                                </a>
+                                {% else %}
+                                <div class="list-group-item text-center text-muted py-4">
+                                    No test cases available
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane fade" id="vulnerabilities-tab-pane" role="tabpanel" aria-labelledby="vulnerabilities-tab" tabindex="0">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">Discovered Vulnerabilities</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                {% for vuln in vulnerabilities %}
+                                <a href="{{ url_for('vulnerability_detail', vulnerability_id=vuln.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0">{{ vuln.title }}</h6>
+                                        <span class="badge bg-{% if vuln.severity == 'critical' %}danger{% elif vuln.severity == 'high' %}warning{% elif vuln.severity == 'medium' %}primary{% else %}secondary{% endif %}">
+                                            {{ vuln.severity }}
+                                        </span>
+                                    </div>
+                                    <div class="mb-2">{{ vuln.description }}</div>
+                                    <div class="d-flex small text-muted">
+                                        <div class="me-3">CVSS: {{ vuln.cvss_score or 'N/A' }}</div>
+                                        <div>Status: {{ vuln.status }}</div>
+                                    </div>
+                                </a>
+                                {% else %}
+                                <div class="list-group-item text-center text-muted py-4">
+                                    No vulnerabilities discovered
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

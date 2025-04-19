@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('profile') }}">Profile</a></li>
+                <li class="breadcrumb-item active" aria-current="page">GitHub Repositories</li>
+            </ol>
+        </nav>
+        <h1 class="h2">GitHub Repositories</h1>
+        {% if request.args.get('error') %}
+        <div class="alert alert-danger" role="alert">
+            {{ request.args.get('error') }}
+        </div>
+        {% endif %}
+        <p class="text-muted">Select repositories to add to SHIELD for security scanning.</p>
+    </div>
+    
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Your Repositories</h5>
+                <a href="{{ url_for('profile') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if repos %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Repository</th>
+                            <th>Language</th>
+                            <th>Visibility</th>
+                            <th>Updated</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for repo in repos %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-code-branch me-2 text-muted"></i>
+                                    <div>
+                                        <a href="{{ repo.html_url }}" target="_blank" class="text-decoration-none">
+                                            {{ repo.full_name }}
+                                        </a>
+                                        {% if repo.description %}
+                                        <div class="small text-muted">{{ repo.description }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ repo.language or 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-{% if repo.private %}secondary{% else %}success{% endif %}">
+                                    {{ 'Private' if repo.private else 'Public' }}
+                                </span>
+                            </td>
+                            <td>{{ repo.updated_at }}</td>
+                            <td>
+                                {% if repo.full_name in saved_repo_names %}
+                                <button class="btn btn-sm btn-success" disabled>
+                                    <i class="fas fa-check me-1"></i> Added
+                                </button>
+                                {% else %}
+                                <form method="post" action="{{ url_for('add_github_repo') }}" class="d-inline">
+                                    <input type="hidden" name="repo_name" value="{{ repo.full_name }}">
+                                    <input type="hidden" name="repo_url" value="{{ repo.html_url }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-plus me-1"></i> Add
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x mb-3 text-muted"></i>
+                <p class="mb-0">No repositories found in your GitHub account.</p>
+                <p class="text-muted">Create some repositories on GitHub or check your GitHub token permissions.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

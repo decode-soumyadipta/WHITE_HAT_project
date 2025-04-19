@@ -9,6 +9,7 @@ const Layout = ({ children }) => {
     { name: 'Dashboard', href: '/dashboard' },
     { name: 'Vulnerabilities', href: '/vulnerabilities' },
     { name: 'Test Cases', href: '/test-cases' },
+    { name: 'GitHub Analyzer', href: '/github-analyzer' },
     { name: 'Profile', href: '/profile' },
     { name: 'Settings', href: '/settings' },
   ];

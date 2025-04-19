@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Test Cases</h1>
+        <div class="d-flex">
+            <div class="me-2">
+                <select class="form-select" id="organizationFilter" onchange="window.location = '{{ url_for('test_cases') }}?organization_id=' + this.value">
+                    {% for org in organizations %}
+                    <option value="{{ org.id }}" {% if selected_org == org.id %}selected{% endif %}>{{ org.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="location.href='{{ url_for('ai_agent_automation') }}'">
+                    <i class="fas fa-robot me-1"></i> Generate Test Cases
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Filter</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="pendingCheck" checked>
+                            <label class="form-check-label" for="pendingCheck">
+                                Pending
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="runningCheck" checked>
+                            <label class="form-check-label" for="runningCheck">
+                                Running
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="completedCheck" checked>
+                            <label class="form-check-label" for="completedCheck">
+                                Completed
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="failedCheck" checked>
+                            <label class="form-check-label" for="failedCheck">
+                                Failed
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Type</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="sqlInjectionCheck" checked>
+                            <label class="form-check-label" for="sqlInjectionCheck">
+                                SQL Injection
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="xssCheck" checked>
+                            <label class="form-check-label" for="xssCheck">
+                                XSS
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="csrfCheck" checked>
+                            <label class="form-check-label" for="csrfCheck">
+                                CSRF
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="otherCheck" checked>
+                            <label class="form-check-label" for="otherCheck">
+                                Other
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Test Cases</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Target</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for test_case in test_cases %}
+                                <tr>
+                                    <td>{{ test_case.id }}</td>
+                                    <td>
+                                        <a href="{{ url_for('test_case_detail', test_case_id=test_case.id) }}" class="text-decoration-none">
+                                            {{ test_case.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ test_case.type }}</td>
+                                    <td>{{ test_case.target }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if test_case.status == 'completed' %}success{% elif test_case.status == 'failed' %}danger{% elif test_case.status == 'running' %}warning{% else %}secondary{% endif %}">
+                                            {{ test_case.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ test_case.created_at }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('test_case_detail', test_case_id=test_case.id) }}" class="btn btn-outline-primary">View</a>
+                                            {% if test_case.status == 'pending' %}
+                                            <button class="btn btn-outline-success">Run</button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <p class="text-muted mb-0">No test cases found</p>
+                                        <small class="d-block mt-2">
+                                            <a href="{{ url_for('ai_agent_automation') }}" class="text-decoration-none">
+                                                <i class="fas fa-robot me-1"></i> Generate test cases with AI
+                                            </a>
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -4,6 +4,8 @@ import Dashboard from './components/Dashboard/Dashboard';
 import Login from './pages/Login';
 import Layout from './components/Layout/Layout';
 import Profile from './pages/Profile';
+import GitHubAnalyzer from './pages/GitHubAnalyzer';
+import AIAgentAutomation from './pages/AIAgentAutomation';
 
 // Modified ProtectedRoute to bypass authentication completely
 const ProtectedRoute = ({ children }) => {
@@ -33,6 +35,26 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <Profile />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/github-analyzer"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <GitHubAnalyzer />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai-agent-automation"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <AIAgentAutomation />
             </Layout>
           </ProtectedRoute>
         }

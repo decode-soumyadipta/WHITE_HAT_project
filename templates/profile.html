@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="mb-4">
+        <h1 class="h2">User Profile</h1>
+        {% if request.args.get('error') %}
+        <div class="alert alert-danger" role="alert">
+            {{ request.args.get('error') }}
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Account Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Username</dt>
+                        <dd class="col-sm-8">{{ user.username }}</dd>
+                        
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8">{{ user.email }}</dd>
+                        
+                        <dt class="col-sm-4">Member Since</dt>
+                        <dd class="col-sm-8">{{ user.created_at }}</dd>
+                        
+                        <dt class="col-sm-4">GitHub</dt>
+                        <dd class="col-sm-8">
+                            {% if github_connected %}
+                            <span class="badge bg-success">Connected</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Not Connected</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">GitHub Integration</h5>
+                </div>
+                <div class="card-body">
+                    {% if github_connected %}
+                    <div class="d-grid mb-3">
+                        <a href="{{ url_for('github_repos') }}" class="btn btn-primary">
+                            <i class="fab fa-github me-2"></i> Browse GitHub Repositories
+                        </a>
+                    </div>
+                    <p class="text-muted small mb-0">Use the button above to browse your GitHub repositories and add them for security scanning.</p>
+                    {% else %}
+                    <p class="mb-3">Connect your GitHub account to enable repository scanning for security vulnerabilities.</p>
+                    <div class="d-grid">
+                        <a href="{{ url_for('github_login') }}" class="btn btn-dark">
+                            <i class="fab fa-github me-2"></i> Connect with GitHub
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">GitHub Repositories</h5>
+                    {% if github_connected %}
+                    <a href="{{ url_for('github_repos') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i> Add Repository
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if repos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Repository</th>
+                                    <th>Last Scan</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for repo in repos %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ repo.repo_url }}" target="_blank" class="text-decoration-none">
+                                            {{ repo.repo_name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ repo.last_scan or 'Never' }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if repo.status == 'completed' %}success{% elif repo.status == 'scanning' %}warning{% elif repo.status == 'error' %}danger{% else %}secondary{% endif %}">
+                                            {{ repo.status|replace('_', ' ')|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('scan_github_repo', repo_id=repo.id) }}" class="btn btn-outline-primary" {% if repo.status == 'scanning' %}disabled{% endif %}>
+                                                <i class="fas fa-shield-alt me-1"></i> Scan
+                                            </a>
+                                            {% if repo.status == 'completed' %}
+                                            <a href="{{ url_for('vulnerabilities') }}" class="btn btn-outline-danger">
+                                                <i class="fas fa-bug me-1"></i> View Vulnerabilities
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        {% if github_connected %}
+                        <i class="fab fa-github fa-3x mb-3 text-muted"></i>
+                        <p class="mb-0">No repositories added yet.</p>
+                        <p class="text-muted">Click "Add Repository" to add a GitHub repository for scanning.</p>
+                        <a href="{{ url_for('github_repos') }}" class="btn btn-primary mt-2">
+                            <i class="fas fa-plus me-1"></i> Add Repository
+                        </a>
+                        {% else %}
+                        <i class="fab fa-github fa-3x mb-3 text-muted"></i>
+                        <p class="mb-0">Connect your GitHub account to add repositories.</p>
+                        <a href="{{ url_for('github_login') }}" class="btn btn-dark mt-3">
+                            <i class="fab fa-github me-2"></i> Connect with GitHub
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Vulnerabilities</h1>
+        <div class="d-flex">
+            <div class="me-2">
+                <select class="form-select" id="organizationFilter" onchange="window.location = '{{ url_for('vulnerabilities') }}?organization_id=' + this.value">
+                    {% for org in organizations %}
+                    <option value="{{ org.id }}" {% if selected_org == org.id %}selected{% endif %}>{{ org.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="location.href='{{ url_for('ai_agent_automation') }}'">
+                    <i class="fas fa-robot me-1"></i> AI Assessment
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Filter</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Severity</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="criticalCheck" checked>
+                            <label class="form-check-label" for="criticalCheck">
+                                Critical
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="highCheck" checked>
+                            <label class="form-check-label" for="highCheck">
+                                High
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="mediumCheck" checked>
+                            <label class="form-check-label" for="mediumCheck">
+                                Medium
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="lowCheck" checked>
+                            <label class="form-check-label" for="lowCheck">
+                                Low
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Status</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="openCheck" checked>
+                            <label class="form-check-label" for="openCheck">
+                                Open
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="inProgressCheck" checked>
+                            <label class="form-check-label" for="inProgressCheck">
+                                In Progress
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="resolvedCheck" checked>
+                            <label class="form-check-label" for="resolvedCheck">
+                                Resolved
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Vulnerabilities</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Severity</th>
+                                    <th>CVSS</th>
+                                    <th>Status</th>
+                                    <th>Discovered</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vuln in vulnerabilities %}
+                                <tr>
+                                    <td>{{ vuln.id }}</td>
+                                    <td>
+                                        <a href="{{ url_for('vulnerability_detail', vulnerability_id=vuln.id) }}" class="text-decoration-none">
+                                            {{ vuln.title }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if vuln.severity == 'critical' %}danger{% elif vuln.severity == 'high' %}warning{% elif vuln.severity == 'medium' %}primary{% else %}secondary{% endif %}">
+                                            {{ vuln.severity }}
+                                        </span>
+                                    </td>
+                                    <td>{{ vuln.cvss_score or 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if vuln.status == 'open' %}danger{% elif vuln.status == 'in_progress' %}warning{% else %}success{% endif %}">
+                                            {{ vuln.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ vuln.discovered_at }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('vulnerability_detail', vulnerability_id=vuln.id) }}" class="btn btn-outline-primary">View</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <p class="text-muted mb-0">No vulnerabilities found</p>
+                                        <small class="d-block mt-2">
+                                            <a href="{{ url_for('ai_agent_automation') }}" class="text-decoration-none">
+                                                <i class="fas fa-robot me-1"></i> Run an AI assessment to discover vulnerabilities
+                                            </a>
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
