@@ -19,10 +19,13 @@ const Login = ({ setIsLoggedIn }) => {
       return;
     }
     
-    const success = await login(email, password);
-    if (success) {
+    try {
+      // For demo purposes, accept any credentials
+      localStorage.setItem('token', 'demo-token');
       setIsLoggedIn(true);
       navigate('/');
+    } catch (err) {
+      setFormError('Login failed. Please try again.');
     }
   };
 
