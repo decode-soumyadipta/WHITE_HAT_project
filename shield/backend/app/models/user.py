@@ -12,6 +12,13 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # GitHub integration fields
+    github_id = db.Column(db.String(64), unique=True, nullable=True)
+    github_username = db.Column(db.String(64), nullable=True)
+    github_access_token = db.Column(db.String(128), nullable=True)
+    github_avatar_url = db.Column(db.String(256), nullable=True)
+    github_connected_at = db.Column(db.DateTime, nullable=True)
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
     
@@ -26,5 +33,9 @@ class User(db.Model):
             'role': self.role,
             'organization_id': self.organization_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'github_connected': bool(self.github_id),
+            'github_username': self.github_username,
+            'github_avatar_url': self.github_avatar_url,
+            'github_connected_at': self.github_connected_at.isoformat() if self.github_connected_at else None
         } 

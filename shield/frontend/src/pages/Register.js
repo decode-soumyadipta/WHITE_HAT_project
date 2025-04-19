@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import AuthContext from '../utils/AuthContext';
 
-const Register = ({ setIsLoggedIn }) => {
+const Register = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -11,6 +11,7 @@ const Register = ({ setIsLoggedIn }) => {
   });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { register, login, loading } = useContext(AuthContext);
 
   const handleChange = (e) => {
     setFormData({
@@ -30,16 +31,19 @@ const Register = ({ setIsLoggedIn }) => {
     }
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/register`, {
+      // First register the user
+      const registerSuccess = await register({
         username: formData.username,
         email: formData.email,
         password: formData.password
       });
 
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        setIsLoggedIn(true);
-        navigate('/');
+      if (registerSuccess) {
+        // If registration is successful, log them in
+        const loginSuccess = await login(formData.email, formData.password);
+        if (loginSuccess) {
+          navigate('/');
+        }
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
@@ -119,9 +123,10 @@ const Register = ({ setIsLoggedIn }) => {
           <div>
             <button
               type="submit"
+              disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Register
+              {loading ? 'Registering...' : 'Register'}
             </button>
           </div>
           
