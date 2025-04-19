@@ -1,0 +1,16 @@
+{
+  "name": "shield-project",
+  "version": "1.0.0",
+  "description": "SHIELD - Synthetic Hacking Intelligence for Enhanced Liability Defense",
+  "scripts": {
+    "start": "cd shield/frontend && npm start",
+    "start:frontend": "cd shield/frontend && npm start",
+    "start:backend": "cd shield/backend && python run.py",
+    "install:frontend": "cd shield/frontend && npm install",
+    "install:backend": "cd shield/backend && pip install -r requirements.txt",
+    "install": "npm run install:frontend && npm run install:backend"
+  },
+  "private": true,
+  "author": "Team WHITE_HAT",
+  "license": "ISC"
+} 
