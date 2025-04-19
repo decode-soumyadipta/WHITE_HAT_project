@@ -1,0 +1,45 @@
+# SHIELD Project Structure
+
+```
+/shield
+  /backend
+    /app
+      /api
+        __init__.py
+        routes.py
+      /auth
+        __init__.py
+        routes.py
+      /models
+        __init__.py
+        user.py
+        organization.py
+        vulnerability.py
+        test_case.py
+      /services
+        __init__.py
+        threat_intelligence.py
+        test_case_generator.py
+        attack_simulator.py
+        risk_analyzer.py
+      /utils
+        __init__.py
+        helpers.py
+      __init__.py
+      config.py
+      extensions.py
+    /migrations
+    .env
+    .flaskenv
+    requirements.txt
+  /frontend
+    /public
+    /src
+      /components
+      /pages
+      /assets
+      /utils
+    package.json
+  docker-compose.yml
+  README.md
+``` 
