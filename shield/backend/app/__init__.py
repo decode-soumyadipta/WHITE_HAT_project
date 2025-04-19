@@ -1,30 +1,34 @@
-from flask import Flask
+from flask import Flask, send_from_directory
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_cors import CORS
-from app.extensions import db, migrate
-from app.config import Config
+from config import Config
 import os
 
+db = SQLAlchemy()
+migrate = Migrate()
+
 def create_app(config_class=Config):
-    app = Flask(__name__, static_folder='../../frontend/build', static_url_path='/')
+    app = Flask(__name__, static_folder='../../frontend/build', static_url_path='')
     app.config.from_object(config_class)
     
-    # Initialize extensions
-    CORS(app)
     db.init_app(app)
     migrate.init_app(app, db)
-    
-    # Register blueprints
-    from app.api.routes import api_bp
-    from app.auth.routes import auth_bp
-    
-    app.register_blueprint(api_bp, url_prefix='/api')
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def serve(path):
-        if path != "" and os.path.exists(app.static_folder + '/' + path):
-            return app.send_static_file(path)
-        return app.send_static_file('index.html')
-    
+    CORS(app)
+
+    from app.routes import auth, dashboard, vulnerabilities, test_cases
+    app.register_blueprint(auth.bp)
+    app.register_blueprint(dashboard.bp)
+    app.register_blueprint(vulnerabilities.bp)
+    app.register_blueprint(test_cases.bp)
+
+    # Serve React App
+    @app.route('/')
+    def serve():
+        return send_from_directory(app.static_folder, 'index.html')
+
+    @app.errorhandler(404)
+    def not_found(e):
+        return send_from_directory(app.static_folder, 'index.html')
+
     return app 
