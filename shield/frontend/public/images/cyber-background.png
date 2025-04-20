@@ -1,0 +1,77 @@
+<svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#0a0e17"/>
+  
+  <!-- Binary Code Patterns -->
+  <g fill="#00ff00" opacity="0.15">
+    <!-- Row 1 -->
+    <text x="10" y="20" font-family="monospace" font-size="12">01001000010000010100001101001011010010010100111001000111</text>
+    <text x="10" y="40" font-family="monospace" font-size="12">00110001001100000011000100110000001100010011000000110001</text>
+    <text x="10" y="60" font-family="monospace" font-size="12">01010011010001010100001101010101010100100100100101010100</text>
+    <text x="10" y="80" font-family="monospace" font-size="12">01000011010110010100001001000101010100100011000101000100</text>
+    <text x="10" y="100" font-family="monospace" font-size="12">01010000010100100100111101010100010001010100001101010100</text>
+    
+    <!-- Row 2 -->
+    <text x="10" y="140" font-family="monospace" font-size="12">01000110010010010101001001000101010101110100000101001100</text>
+    <text x="10" y="160" font-family="monospace" font-size="12">01001110010001010101010001010111010011110101001001001011</text>
+    <text x="10" y="180" font-family="monospace" font-size="12">01001000010000010100001101001011010010010100111001000111</text>
+    <text x="10" y="200" font-family="monospace" font-size="12">01010011010010000100100101000101010011000100010000111111</text>
+    <text x="10" y="220" font-family="monospace" font-size="12">01001001010011100101010001010010010101010101001101001001</text>
+    
+    <!-- Repeat for more rows -->
+    <text x="10" y="260" font-family="monospace" font-size="12">01000001010101010101010001001000010001010100111001010100</text>
+    <text x="10" y="280" font-family="monospace" font-size="12">01001001010000110100000101010100010010010100111101001110</text>
+    <text x="10" y="300" font-family="monospace" font-size="12">01010000010100100100111101010100010011110100001101001111</text>
+    <text x="10" y="320" font-family="monospace" font-size="12">01001100001100000011000100110000001100010011000000110001</text>
+    
+    <!-- Column 2 -->
+    <text x="450" y="40" font-family="monospace" font-size="12">01000100010001010100001101001111010001000100010100111111</text>
+    <text x="450" y="60" font-family="monospace" font-size="12">01010110010101010100110001001110010001010101001001000001</text>
+    <text x="450" y="80" font-family="monospace" font-size="12">01000010010010010100111001000001010100100101100100001111</text>
+    <text x="450" y="100" font-family="monospace" font-size="12">01001000010000010100001101001011010010010100111001000111</text>
+    <text x="450" y="120" font-family="monospace" font-size="12">01001001010011100101001001000101010000010100001101001000</text>
+    <text x="450" y="140" font-family="monospace" font-size="12">01000101010011100100001101010010010110010101000001010100</text>
+    <text x="450" y="160" font-family="monospace" font-size="12">01001001010011110100111000111111001111110011111100111111</text>
+    <text x="450" y="180" font-family="monospace" font-size="12">01010011010010000100100101000101010011000100010000111101</text>
+    <text x="450" y="200" font-family="monospace" font-size="12">01010011010001010100001101010101010100100100100101010100</text>
+    
+    <!-- Column 3 -->
+    <text x="850" y="60" font-family="monospace" font-size="12">01010110010101010100110001001110010001010101001001000001</text>
+    <text x="850" y="80" font-family="monospace" font-size="12">01000100010001010100001101001111010001000100010100111111</text>
+    <text x="850" y="100" font-family="monospace" font-size="12">01001000010000010100001101001011010010010100111001000111</text>
+    <text x="850" y="120" font-family="monospace" font-size="12">01001000010000010100001101001011001001010100111001000111</text>
+    <text x="850" y="140" font-family="monospace" font-size="12">01001000010000010100001101001011010010010100111001000111</text>
+    <text x="850" y="160" font-family="monospace" font-size="12">00110001001100000011000100110000001100010011000000110001</text>
+    <text x="850" y="180" font-family="monospace" font-size="12">01010011010001010100001101010101010100100100100101010100</text>
+    <text x="850" y="200" font-family="monospace" font-size="12">01001000010000010100001101001011010010010100111001000111</text>
+    
+    <!-- Repeat patterns at different positions -->
+    <text x="50" y="350" font-family="monospace" font-size="12">01010011010010000100100101000101010011000100010000111111</text>
+    <text x="150" y="380" font-family="monospace" font-size="12">01000001010101010101010001001000010001010100111001010100</text>
+    <text x="250" y="410" font-family="monospace" font-size="12">01001001010000110100000101010100010010010100111101001110</text>
+    <text x="350" y="440" font-family="monospace" font-size="12">01010000010100100100111101010100010011110100001101001111</text>
+    <text x="450" y="470" font-family="monospace" font-size="12">01001100001100000011000100110000001100010011000000110001</text>
+    <text x="550" y="500" font-family="monospace" font-size="12">01000100010001010100001101001111010001000100010100111111</text>
+    <text x="650" y="530" font-family="monospace" font-size="12">01010110010101010100110001001110010001010101001001000001</text>
+    <text x="750" y="560" font-family="monospace" font-size="12">01000010010010010100111001000001010100100101100100001111</text>
+    <text x="850" y="590" font-family="monospace" font-size="12">01001000010000010100001101001011010010010100111001000111</text>
+    <text x="950" y="620" font-family="monospace" font-size="12">01001001010011100101001001000101010000010100001101001000</text>
+    
+    <!-- More binary patterns scattered around -->
+    <text x="100" y="650" font-family="monospace" font-size="12">01001000010000010100001101001011010010010100111001000111</text>
+    <text x="300" y="680" font-family="monospace" font-size="12">01010011010001010100001101010101010100100100100101010100</text>
+    <text x="500" y="710" font-family="monospace" font-size="12">01000011010110010100001001000101010100100011000101000100</text>
+    <text x="700" y="740" font-family="monospace" font-size="12">01010000010100100100111101010100010001010100001101010100</text>
+    <text x="200" y="770" font-family="monospace" font-size="12">01001000010000010100001101001011010010010100111001000111</text>
+  </g>
+  
+  <!-- Cybersecurity Elements -->
+  <g fill="#00ff00" opacity="0.2">
+    <circle cx="200" cy="300" r="100" fill="none" stroke="#00ff00" stroke-width="2" opacity="0.3"/>
+    <circle cx="800" cy="400" r="150" fill="none" stroke="#00ff00" stroke-width="2" opacity="0.2"/>
+    <circle cx="500" cy="600" r="80" fill="none" stroke="#00ff00" stroke-width="2" opacity="0.3"/>
+    
+    <!-- Shield icon -->
+    <path d="M600,200 L700,200 L700,300 Q650,380 600,300 Z" fill="none" stroke="#00ff00" stroke-width="2" opacity="0.5"/>
+    <path d="M300,500 L400,500 L400,600 Q350,680 300,600 Z" fill="none" stroke="#00ff00" stroke-width="2" opacity="0.4"/>
+  </g>
+</svg> 

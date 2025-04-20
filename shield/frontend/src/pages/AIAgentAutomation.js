@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
     Container, Row, Col, Card, Button, Form, Alert, 
     Spinner, ListGroup, Badge, Modal, Tab, Tabs 
@@ -7,7 +7,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-    faRobot, faCheck, faTimes, faExclamationTriangle, 
+    faRobot, faCheck, faExclamationTriangle, 
     faList, faLock, faShieldAlt, faTerminal, faSitemap
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -27,10 +27,25 @@ const AIAgentAutomation = () => {
     
     const navigate = useNavigate();
     
-    // Fetch organizations on component mount
-    useEffect(() => {
-        fetchOrganizations();
-    }, []);
+    // Define fetch functions with useCallback to avoid dependency issues
+    const fetchTestCases = useCallback(async () => {
+        try {
+            const response = await axios.get(`/api/ai-agent-test-cases/${selectedOrg}`);
+            setTestCases(response.data);
+        } catch (err) {
+            console.error('Failed to fetch test cases:', err);
+        }
+    }, [selectedOrg]);
+    
+    // Fetch vulnerabilities from API
+    const fetchVulnerabilities = useCallback(async () => {
+        try {
+            const response = await axios.get(`/api/ai-agent-vulnerabilities/${selectedOrg}`);
+            setVulnerabilities(response.data);
+        } catch (err) {
+            console.error('Failed to fetch vulnerabilities:', err);
+        }
+    }, [selectedOrg]);
     
     // Fetch organizations from API
     const fetchOrganizations = async () => {
@@ -55,33 +70,18 @@ const AIAgentAutomation = () => {
         }
     };
     
+    // Fetch organizations on component mount
+    useEffect(() => {
+        fetchOrganizations();
+    }, []);
+    
     // Fetch test cases and vulnerabilities when organization is selected
     useEffect(() => {
         if (selectedOrg) {
             fetchTestCases();
             fetchVulnerabilities();
         }
-    }, [selectedOrg]);
-    
-    // Fetch test cases from API
-    const fetchTestCases = async () => {
-        try {
-            const response = await axios.get(`/api/ai-agent-test-cases/${selectedOrg}`);
-            setTestCases(response.data);
-        } catch (err) {
-            console.error('Failed to fetch test cases:', err);
-        }
-    };
-    
-    // Fetch vulnerabilities from API
-    const fetchVulnerabilities = async () => {
-        try {
-            const response = await axios.get(`/api/ai-agent-vulnerabilities/${selectedOrg}`);
-            setVulnerabilities(response.data);
-        } catch (err) {
-            console.error('Failed to fetch vulnerabilities:', err);
-        }
-    };
+    }, [selectedOrg, fetchTestCases, fetchVulnerabilities]);
     
     // Handler for organization change
     const handleOrgChange = (e) => {
