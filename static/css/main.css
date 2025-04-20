@@ -151,3 +151,48 @@
         padding: 1rem;
     }
 } 
+
+.shield-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("https://img.freepik.com/free-photo/abstract-green-technology-background_1017-3422.jpg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.1;
+  z-index: -1;
+}
+
+.binary-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Courier New', monospace;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  pointer-events: none;
+  z-index: -2;
+  animation: fade-in-binary 8s ease-in-out infinite;
+}
+
+@keyframes fade-in-binary {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.15; }
+}
+
+.binary-row {
+  display: flex;
+  justify-content: space-around;
+  margin: 0.4rem 0;
+  font-size: 14px;
+  letter-spacing: 0.8rem;
+  opacity: 0.8;
+  color: #39FF14;
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+}
