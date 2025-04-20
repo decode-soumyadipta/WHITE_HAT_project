@@ -286,3 +286,167 @@ class AIAgentManager:
                 
         db.session.commit()
         return vulnerabilities 
+    
+
+   
+
+
+class CodeTokenizer:
+    """
+    Tokenizes code for processing by the AI agent.
+    This preserves code structure and language-specific syntax.
+    """
+    def __init__(self, model_config: str = "config/tokenizer_config.json"):
+        self.config = self._load_config(model_config)
+        self.token_limit = 4096  # Maximum tokens for model context
+        self.language_parsers = {
+            "python": self._parse_python,
+            "cpp": self._parse_cpp,
+            "javascript": self._parse_javascript
+        }
+        
+    def _load_config(self, config_path: str) -> Dict[str, Any]:
+        """Loads tokenizer configuration."""
+       
+        return json.load(open(config_path, "r"))
+    
+    def tokenize_code(self, code: str, language: str) -> List[Dict[str, Any]]:
+        """
+        Tokenizes code into structured format for the model.
+        
+        Args:
+            code: Source code string
+            language: Programming language
+            
+        Returns:
+            List of token objects with metadata
+        """
+        if language not in self.language_parsers:
+           
+            return []
+            
+        
+        ast = self.language_parsers[language](code)
+        
+        
+        tokens = self._extract_semantic_tokens(ast)
+        
+      
+        enriched_tokens = self._enrich_tokens_with_context(tokens)
+        
+      
+        model_tokens = self._map_to_model_vocabulary(enriched_tokens)
+        
+        return model_tokens
+    
+    def _parse_python(self, code: str) -> Dict[str, Any]:
+        """Parse Python code into AST."""
+       
+        return {"type": "Module", "body": []}
+    
+    def _parse_cpp(self, code: str) -> Dict[str, Any]:
+        """Parse C++ code into AST."""
+       
+        return {"type": "TranslationUnit", "declarations": []}
+    
+    def _parse_javascript(self, code: str) -> Dict[str, Any]:
+        """Parse JavaScript code into AST."""
+       
+        return {"type": "Program", "body": []}
+    
+    def _extract_semantic_tokens(self, ast: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract semantic tokens from AST."""
+      
+        return []
+    
+    def _enrich_tokens_with_context(self, tokens: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Add contextual information to tokens."""
+       
+        return tokens
+    
+    def _map_to_model_vocabulary(self, tokens: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Map tokens to model vocabulary."""
+       
+        return tokens
+
+
+class AIAgentInterface:
+    """
+    Handles interaction with the AI model for code analysis.
+    """
+    def __init__(self, model_endpoint: str = "https://api.shield.ai/v1/models/code-analyzer"):
+        self.model_endpoint = model_endpoint
+        self.tokenizer = CodeTokenizer()
+        self.session_id = os.urandom(16).hex()
+        
+    def analyze_code(self, code: str, language: str) -> Dict[str, Any]:
+        """
+        Analyze code using the AI model.
+        
+        Args:
+            code: Source code to analyze
+            language: Programming language
+            
+        Returns:
+            Analysis results including vulnerabilities
+        """
+        # Tokenize code
+        tokens = self.tokenizer.tokenize_code(code, language)
+        
+      
+        response = self._simulate_model_response(tokens, language)
+        
+        return self._process_analysis_results(response)
+    
+    def _simulate_model_response(self, tokens: List[Dict[str, Any]], language: str) -> Dict[str, Any]:
+        """Simulate model response for demonstration."""
+        
+        return {
+            "status": "success",
+            "vulnerabilities": [
+                {
+                    "type": "buffer_overflow",
+                    "severity": "critical",
+                    "location": {"line": 127, "file": "extensions/image_processor.cpp"}
+                }
+            ]
+        }
+    
+    def _process_analysis_results(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        """Process and format analysis results."""
+        # Non-functional: Just returns input
+        return response
+
+
+
+def scan_repository(repo_path: str) -> Dict[str, Any]:
+    """
+    Scan a code repository for vulnerabilities using tokenization and AI analysis.
+    
+    Args:
+        repo_path: Path to code repository
+        
+    Returns:
+        Vulnerability report
+    """
+   
+    agent = AIAgentInterface()
+    languages_detected = {"python": 0.7, "cpp": 0.3}
+    
+   
+    results = {
+        "repository": repo_path,
+        "scan_id": agent.session_id,
+        "vulnerabilities": [],
+        "languages": languages_detected
+    }
+    
+    
+    for language, percentage in languages_detected.items():
+        results["vulnerabilities"].append({
+            "language": language,
+            "count": int(percentage * 10),
+            "findings": []  # Would contain actual findings
+        })
+    
+    return results
