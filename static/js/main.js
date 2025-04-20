@@ -12,6 +12,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize tooltips and popovers if Bootstrap is available
     initializeBootstrapComponents();
+    
+    // Initialize Matrix effect for login page
+    initMatrixEffect();
+    
+    // Add pulsing effect to the login button
+    const loginBtn = document.querySelector('.btn-login');
+    if (loginBtn) {
+        loginBtn.addEventListener('mouseenter', function() {
+            this.classList.add('pulse');
+        });
+        loginBtn.addEventListener('mouseleave', function() {
+            this.classList.remove('pulse');
+        });
+    }
 });
 
 /**
@@ -119,4 +133,62 @@ function initAIAgentPage() {
             }
         });
     }
+}
+
+/**
+ * Initialize the Matrix effect for the login page
+ */
+function initMatrixEffect() {
+    const loginPage = document.querySelector('.login-card');
+    
+    if (loginPage) {
+        // Create matrix background container
+        const matrixBg = document.createElement('div');
+        matrixBg.className = 'matrix-bg';
+        document.body.appendChild(matrixBg);
+        
+        // Add binary elements
+        for (let i = 0; i < 50; i++) {
+            createBinaryElement(matrixBg);
+        }
+        
+        // Add animation to body
+        document.body.classList.add('dark-theme');
+    }
+}
+
+/**
+ * Create a binary element for the matrix effect
+ * @param {HTMLElement} container - The container element
+ */
+function createBinaryElement(container) {
+    const element = document.createElement('div');
+    element.className = 'binary-element';
+    
+    // Random binary string
+    const binaryChars = ['0', '1'];
+    let binaryString = '';
+    
+    for (let i = 0; i < 8; i++) {
+        binaryString += binaryChars[Math.floor(Math.random() * 2)];
+    }
+    
+    element.textContent = binaryString;
+    
+    // Random position
+    const posX = Math.random() * window.innerWidth;
+    const posY = Math.random() * window.innerHeight;
+    element.style.left = `${posX}px`;
+    element.style.top = `${posY}px`;
+    
+    // Random animation delay
+    element.style.animationDelay = `${Math.random() * 5}s`;
+    
+    container.appendChild(element);
+    
+    // Remove and recreate after animation
+    setTimeout(() => {
+        element.remove();
+        createBinaryElement(container);
+    }, 3000 + (Math.random() * 2000));
 } 

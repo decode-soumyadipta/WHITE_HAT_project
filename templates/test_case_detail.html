@@ -12,7 +12,14 @@
         </nav>
         
         <div class="d-flex justify-content-between align-items-center">
-            <h1 class="h2">{{ test_case.name }}</h1>
+            <div>
+                <h1 class="h2 mb-0">{{ test_case.name }}</h1>
+                {% if 'AI' in test_case.name %}
+                <span class="badge bg-info text-dark">
+                    <i class="fas fa-robot me-1"></i> AI Generated
+                </span>
+                {% endif %}
+            </div>
             <div>
                 <button id="runTestBtn" class="btn btn-success me-2">Run Test</button>
                 <button class="btn btn-outline-danger">Delete</button>
@@ -29,27 +36,31 @@
                 <div class="card-body">
                     <div class="mb-4">
                         <h6>Description</h6>
-                        <p>{{ test_case.description }}</p>
+                        <div class="p-3 bg-light rounded">
+                            <p class="mb-0">{{ test_case.description }}</p>
+                        </div>
                     </div>
                     
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <h6>Target</h6>
-                            <div class="bg-light p-2 rounded">
-                                <code>{{ test_case.target }}</code>
+                            <div class="bg-dark text-light p-3 rounded">
+                                <code class="d-block mb-0">{{ test_case.target }}</code>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <h6>Payload</h6>
-                            <div class="bg-light p-2 rounded">
-                                <code>{{ test_case.payload }}</code>
+                            <div class="bg-dark text-light p-3 rounded">
+                                <code class="d-block mb-0">{{ test_case.payload }}</code>
                             </div>
                         </div>
                     </div>
                     
                     <div class="mb-4">
                         <h6>Expected Result</h6>
-                        <p>{{ test_case.expected_result }}</p>
+                        <div class="p-3 bg-light rounded">
+                            <p class="mb-0">{{ test_case.expected_result }}</p>
+                        </div>
                     </div>
                     
                     {% if test_case.result %}
@@ -64,7 +75,7 @@
                     {% if test_case.status == 'completed' or test_case.status == 'failed' %}
                     <div class="mb-4">
                         <h6>Test Output</h6>
-                        <div class="bg-dark text-light p-3 rounded">
+                        <div class="bg-dark text-light p-3 rounded overflow-auto" style="max-height: 300px;">
                             <pre class="mb-0"><code>{{ test_output or "No detailed output available" }}</code></pre>
                         </div>
                     </div>
@@ -73,25 +84,65 @@
                     {% if vulnerability %}
                     <div>
                         <h6>Associated Vulnerability</h6>
-                        <div class="card">
+                        <div class="card border-0 shadow-sm">
                             <div class="card-body">
-                                <h5 class="card-title">
-                                    <a href="{{ url_for('vulnerability_detail', vulnerability_id=vulnerability.id) }}" class="text-decoration-none">
-                                        {{ vulnerability.title }}
-                                    </a>
-                                </h5>
-                                <h6 class="card-subtitle mb-2 text-muted">
-                                    <span class="badge bg-{% if vulnerability.severity == 'critical' %}danger{% elif vulnerability.severity == 'high' %}warning{% elif vulnerability.severity == 'medium' %}primary{% else %}secondary{% endif %}">
+                                <div class="d-flex align-items-center mb-2">
+                                    <h5 class="card-title mb-0">
+                                        <a href="{{ url_for('vulnerability_detail', vulnerability_id=vulnerability.id) }}" class="text-decoration-none">
+                                            {{ vulnerability.title }}
+                                        </a>
+                                    </h5>
+                                    <span class="badge bg-{% if vulnerability.severity == 'critical' %}danger{% elif vulnerability.severity == 'high' %}warning{% elif vulnerability.severity == 'medium' %}primary{% else %}secondary{% endif %} ms-2">
                                         {{ vulnerability.severity }}
                                     </span>
-                                </h6>
-                                <p class="card-text">{{ vulnerability.description|truncate(100) }}</p>
+                                </div>
+                                <p class="card-text">{{ vulnerability.description|truncate(200) }}</p>
+                                <a href="{{ url_for('vulnerability_detail', vulnerability_id=vulnerability.id) }}" class="btn btn-sm btn-outline-primary">View Details</a>
                             </div>
                         </div>
                     </div>
                     {% endif %}
                 </div>
             </div>
+            
+            {% if 'AI' in test_case.name %}
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Security Guidance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-lightbulb me-2"></i>AI-Generated Security Insights</h6>
+                        <p>This test case was automatically generated by SHIELD AI to help detect potential security vulnerabilities in your application.</p>
+                    </div>
+                    
+                    <h6>Best Practices</h6>
+                    <ul class="list-group list-group-flush mb-3">
+                        {% if 'SQL' in test_case.type or 'sql' in test_case.type %}
+                        <li class="list-group-item">Use parameterized queries or prepared statements</li>
+                        <li class="list-group-item">Implement proper input validation and sanitization</li>
+                        <li class="list-group-item">Apply the principle of least privilege to database accounts</li>
+                        {% elif 'XSS' in test_case.type or 'xss' in test_case.type %}
+                        <li class="list-group-item">Implement Content Security Policy (CSP)</li>
+                        <li class="list-group-item">Use context-specific output encoding</li>
+                        <li class="list-group-item">Validate and sanitize user inputs</li>
+                        {% elif 'CSRF' in test_case.type or 'csrf' in test_case.type %}
+                        <li class="list-group-item">Implement anti-CSRF tokens in all forms</li>
+                        <li class="list-group-item">Use SameSite cookie attribute</li>
+                        <li class="list-group-item">Verify request origins with custom headers</li>
+                        {% else %}
+                        <li class="list-group-item">Implement proper input validation</li>
+                        <li class="list-group-item">Follow the principle of least privilege</li>
+                        <li class="list-group-item">Keep all dependencies and libraries updated</li>
+                        {% endif %}
+                    </ul>
+                    
+                    <a href="https://owasp.org/www-project-top-ten/" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-external-link-alt me-1"></i>OWASP Resources
+                    </a>
+                </div>
+            </div>
+            {% endif %}
         </div>
         
         <div class="col-md-4">
@@ -123,7 +174,13 @@
                         <dd class="col-sm-8">{{ test_case.updated_at or 'Never run' }}</dd>
                         
                         <dt class="col-sm-4">Generated By</dt>
-                        <dd class="col-sm-8">{% if 'AI' in test_case.name %}AI Assistant{% else %}Manual{% endif %}</dd>
+                        <dd class="col-sm-8">
+                            {% if 'AI' in test_case.name %}
+                            <span class="text-info"><i class="fas fa-robot me-1"></i> AI Assistant</span>
+                            {% else %}
+                            <span><i class="fas fa-user me-1"></i> Manual</span>
+                            {% endif %}
+                        </dd>
                     </dl>
                 </div>
             </div>
@@ -167,6 +224,27 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Run test button functionality
+    const runTestBtn = document.getElementById('runTestBtn');
+    if (runTestBtn) {
+        runTestBtn.addEventListener('click', function() {
+            // Change button state to loading
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Running...';
+            this.disabled = true;
+            
+            // In a real implementation, you would make an AJAX request to run the test
+            // For this demo, we'll just simulate the process
+            setTimeout(function() {
+                alert('Test execution has been simulated. In a real implementation, this would actually run the test.');
+                location.reload();
+            }, 2000);
+        });
+    }
+});
+</script>
 {% endblock %}
 
 {% block extra_styles %}
@@ -200,20 +278,4 @@
         border-radius: 50%;
     }
 </style>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Simulate running a test
-    document.getElementById('runTestBtn').addEventListener('click', function() {
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Running...';
-        
-        // Simulate a test run with a delay
-        setTimeout(function() {
-            alert('Test execution completed! Page will reload with results.');
-            window.location.reload();
-        }, 3000);
-    });
-</script>
 {% endblock %} 

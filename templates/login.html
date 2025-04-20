@@ -1,50 +1,194 @@
 {% extends 'base.html' %}
 
+{% block extra_styles %}
+<style>
+    body {
+        background-color: #0a0a0f;
+        background-image: 
+            linear-gradient(rgba(10, 10, 15, 0.9), rgba(10, 10, 15, 0.9)),
+            url('https://images.unsplash.com/photo-1510511459019-5dda7724fd87?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        color: #d8d8d8;
+    }
+    
+    .login-card {
+        background-color: rgba(25, 25, 35, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid #6a1b9a;
+        border-radius: 8px;
+        box-shadow: 0 0 30px rgba(106, 27, 154, 0.4);
+    }
+    
+    .login-header {
+        border-bottom: 2px solid #6a1b9a;
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .login-title {
+        color: #d8d8d8;
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+    
+    .login-subtitle {
+        color: #9c27b0;
+        font-size: 0.9rem;
+    }
+    
+    .form-control, .input-group-text {
+        background-color: rgba(20, 20, 30, 0.8);
+        border: 1px solid #4a148c;
+        color: #d8d8d8;
+    }
+    
+    .form-control:focus {
+        background-color: rgba(30, 30, 45, 0.8);
+        border-color: #7b1fa2;
+        box-shadow: 0 0 0 0.25rem rgba(106, 27, 154, 0.25);
+        color: #ffffff;
+    }
+    
+    .input-group-text {
+        color: #9c27b0;
+    }
+    
+    .btn-login {
+        background-color: #6a1b9a;
+        border: none;
+        color: white;
+        font-weight: 600;
+        letter-spacing: 1px;
+        padding: 10px;
+        text-transform: uppercase;
+        transition: all 0.3s;
+    }
+    
+    .btn-login:hover {
+        background-color: #7b1fa2;
+        box-shadow: 0 0 15px rgba(123, 31, 162, 0.5);
+        transform: translateY(-2px);
+    }
+    
+    .security-pulse {
+        display: inline-block;
+        position: relative;
+        width: 15px;
+        height: 15px;
+        background-color: #9c27b0;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    
+    .security-pulse::after {
+        content: '';
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background-color: rgba(156, 39, 176, 0.3);
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(3);
+            opacity: 0;
+        }
+    }
+    
+    .demo-credentials {
+        background-color: rgba(20, 20, 30, 0.5);
+        border-left: 3px solid #9c27b0;
+        padding: 10px;
+        font-size: 0.8rem;
+    }
+    
+    .shield-icon {
+        font-size: 3.5rem;
+        color: #9c27b0;
+        margin-bottom: 15px;
+    }
+    
+    .tip-box {
+        background-color: rgba(20, 20, 30, 0.5);
+        border-radius: 4px;
+        margin-top: 15px;
+        padding: 10px;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-body p-5">
-                    <div class="text-center mb-4">
-                        <h2 class="fw-bold">SHIELD</h2>
-                        <p class="text-muted">Security Hub for Intelligent Entry-Level Defense</p>
+        <div class="col-md-6 col-lg-5">
+            <div class="text-center mb-4">
+                <i class="fas fa-shield-alt shield-icon"></i>
+                <h1 class="login-title text-uppercase mb-0">SHIELD</h1>
+                <div class="login-subtitle">Security Hub for Intelligent Entry-Level Defense</div>
+            </div>
+            
+            <div class="card login-card">
+                <div class="card-body p-4">
+                    <div class="login-header text-center">
+                        <div class="d-flex align-items-center justify-content-center mb-2">
+                            <span class="security-pulse"></span>
+                            <h4 class="mb-0">Secure Authentication</h4>
+                        </div>
+                        <small class="text-muted">Enter your credentials to access the security dashboard</small>
                     </div>
                     
                     <form method="post" action="{{ url_for('login') }}">
                         {% if error %}
                         <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
                             {{ error }}
                         </div>
                         {% endif %}
                         
                         <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
+                            <label for="username" class="form-label text-light">Username</label>
                             <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                <input type="text" class="form-control" id="username" name="username" required>
+                                <span class="input-group-text"><i class="fas fa-user-shield"></i></span>
+                                <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
                             </div>
                         </div>
                         
                         <div class="mb-4">
-                            <label for="password" class="form-label">Password</label>
+                            <label for="password" class="form-label text-light">Password</label>
                             <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                <input type="password" class="form-control" id="password" name="password" required>
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
                             </div>
                         </div>
                         
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Sign In</button>
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="submit" class="btn btn-login">
+                                <i class="fas fa-lock-open me-2"></i>Secure Login
+                            </button>
+                        </div>
+                        
+                        <div class="demo-credentials">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span>Demo credentials:</span> 
+                            <strong>Username:</strong> admin | 
+                            <strong>Password:</strong> password
                         </div>
                     </form>
-                    
-                    <div class="text-center mt-4">
-                        <small class="text-muted">
-                            For demo purposes, use username: <strong>admin</strong> and password: <strong>password</strong>
-                        </small>
-                    </div>
                 </div>
+            </div>
+            
+            <div class="tip-box mt-3 text-center">
+                <i class="fas fa-fingerprint me-2"></i>
+                <span>Security Tip: Always use a strong, unique password for each of your accounts.</span>
             </div>
         </div>
     </div>

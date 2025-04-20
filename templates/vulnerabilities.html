@@ -3,20 +3,14 @@
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2">Vulnerabilities</h1>
-        <div class="d-flex">
-            <div class="me-2">
-                <select class="form-select" id="organizationFilter" onchange="window.location = '{{ url_for('vulnerabilities') }}?organization_id=' + this.value">
-                    {% for org in organizations %}
-                    <option value="{{ org.id }}" {% if selected_org == org.id %}selected{% endif %}>{{ org.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <button class="btn btn-primary" onclick="location.href='{{ url_for('ai_agent_automation') }}'">
-                    <i class="fas fa-robot me-1"></i> AI Assessment
-                </button>
-            </div>
+        <div>
+            <h1 class="h2">Vulnerabilities</h1>
+            <p class="text-muted mb-0">Total: {{ total_vulnerabilities }} vulnerabilities detected</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="location.href='{{ url_for('ai_agent_automation') }}';">
+                <i class="fas fa-robot me-1"></i> AI Assessment
+            </button>
         </div>
     </div>
     
@@ -82,8 +76,12 @@
         
         <div class="col-md-9">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Vulnerabilities</h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="aiGeneratedOnly">
+                        <label class="form-check-label" for="aiGeneratedOnly">AI Detected Only</label>
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -96,16 +94,20 @@
                                     <th>CVSS</th>
                                     <th>Status</th>
                                     <th>Discovered</th>
+                                    <th>Source</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for vuln in vulnerabilities %}
-                                <tr>
+                                {% for vuln in vulnerabilities[:4] %}
+                                <tr class="vuln-row {% if vuln.discovered_by == 'SHIELD' or 'AI' in vuln.discovered_by or 'Code Review' in vuln.discovered_by %}ai-generated{% endif %}" 
+                                    data-severity="{{ vuln.severity }}" data-status="{{ vuln.status }}">
                                     <td>{{ vuln.id }}</td>
                                     <td>
                                         <a href="{{ url_for('vulnerability_detail', vulnerability_id=vuln.id) }}" class="text-decoration-none">
-                                            {{ vuln.title }}
+                                            <span class="text-truncate d-inline-block" style="max-width: 250px;" title="{{ vuln.title }}">
+                                                {{ vuln.title }}
+                                            </span>
                                         </a>
                                     </td>
                                     <td>
@@ -121,23 +123,36 @@
                                     </td>
                                     <td>{{ vuln.discovered_at }}</td>
                                     <td>
+                                        {% if vuln.discovered_by == 'SHIELD' or 'AI' in vuln.discovered_by or 'Code Review' in vuln.discovered_by %}
+                                        <span class="badge bg-info text-dark">
+                                            <i class="fas fa-robot me-1"></i> AI
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-user me-1"></i> Manual
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         <div class="btn-group btn-group-sm">
                                             <a href="{{ url_for('vulnerability_detail', vulnerability_id=vuln.id) }}" class="btn btn-outline-primary">View</a>
+                                            {% if vuln.status == 'open' %}
+                                            <button class="btn btn-outline-warning update-status-btn" data-vuln-id="{{ vuln.id }}" data-status="in_progress">In Progress</button>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
-                                {% else %}
+                                {% endfor %}
+                                
+                                {% if vulnerabilities|length > 4 %}
                                 <tr>
-                                    <td colspan="7" class="text-center py-4">
-                                        <p class="text-muted mb-0">No vulnerabilities found</p>
-                                        <small class="d-block mt-2">
-                                            <a href="{{ url_for('ai_agent_automation') }}" class="text-decoration-none">
-                                                <i class="fas fa-robot me-1"></i> Run an AI assessment to discover vulnerabilities
-                                            </a>
-                                        </small>
+                                    <td colspan="8" class="text-center py-3 bg-light">
+                                        <a href="{{ url_for('vulnerabilities') }}" class="text-decoration-none">
+                                            <i class="fas fa-ellipsis-h me-1"></i> {{ vulnerabilities|length - 4 }} more vulnerabilities available
+                                        </a>
                                     </td>
                                 </tr>
-                                {% endfor %}
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
@@ -146,4 +161,76 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Severity filter implementation
+    const criticalCheck = document.getElementById('criticalCheck');
+    const highCheck = document.getElementById('highCheck');
+    const mediumCheck = document.getElementById('mediumCheck');
+    const lowCheck = document.getElementById('lowCheck');
+    
+    // Status filter implementation
+    const openCheck = document.getElementById('openCheck');
+    const inProgressCheck = document.getElementById('inProgressCheck');
+    const resolvedCheck = document.getElementById('resolvedCheck');
+    
+    // AI Generated filter
+    const aiGeneratedOnly = document.getElementById('aiGeneratedOnly');
+    
+    // All vulnerability rows
+    const vulnRows = document.querySelectorAll('.vuln-row');
+    
+    function applyFilters() {
+        vulnRows.forEach(row => {
+            // Get row data attributes
+            const severity = row.dataset.severity;
+            const status = row.dataset.status;
+            const isAiGenerated = row.classList.contains('ai-generated');
+            
+            // Check if row should be visible based on severity filters
+            const severityVisible = 
+                (severity === 'critical' && criticalCheck.checked) ||
+                (severity === 'high' && highCheck.checked) ||
+                (severity === 'medium' && mediumCheck.checked) ||
+                (severity === 'low' && lowCheck.checked);
+            
+            // Check if row should be visible based on status filters
+            const statusVisible = 
+                (status === 'open' && openCheck.checked) ||
+                (status === 'in_progress' && inProgressCheck.checked) ||
+                (status === 'resolved' && resolvedCheck.checked);
+            
+            // Check if row should be visible based on AI generated filter
+            const aiVisible = !aiGeneratedOnly.checked || isAiGenerated;
+            
+            // Set row visibility
+            row.style.display = severityVisible && statusVisible && aiVisible ? '' : 'none';
+        });
+    }
+    
+    // Add event listeners to all filter checkboxes
+    [criticalCheck, highCheck, mediumCheck, lowCheck, 
+     openCheck, inProgressCheck, resolvedCheck, aiGeneratedOnly].forEach(checkbox => {
+        checkbox.addEventListener('change', applyFilters);
+    });
+    
+    // Add event listeners to status update buttons
+    document.querySelectorAll('.update-status-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const vulnId = this.getAttribute('data-vuln-id');
+            const newStatus = this.getAttribute('data-status');
+            
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            this.disabled = true;
+            
+            // Here we would make an AJAX call to update the status
+            // For now, just redirect to the detail page after a short delay
+            setTimeout(function() {
+                window.location.href = '{{ url_for('vulnerability_detail', vulnerability_id=0) }}'.replace('0', vulnId);
+            }, 1500);
+        });
+    });
+});
+</script>
 {% endblock %} 

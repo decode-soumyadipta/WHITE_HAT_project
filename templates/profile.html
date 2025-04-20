@@ -51,7 +51,14 @@
                             <i class="fab fa-github me-2"></i> Browse GitHub Repositories
                         </a>
                     </div>
-                    <p class="text-muted small mb-0">Use the button above to browse your GitHub repositories and add them for security scanning.</p>
+                    <div class="d-grid mb-3">
+                        <form action="{{ url_for('github_disconnect') }}" method="post">
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-unlink me-2"></i> Disconnect GitHub
+                            </button>
+                        </form>
+                    </div>
+                    <p class="text-muted small mb-0">Use the buttons above to browse your GitHub repositories or disconnect your GitHub account.</p>
                     {% else %}
                     <p class="mb-3">Connect your GitHub account to enable repository scanning for security vulnerabilities.</p>
                     <div class="d-grid">

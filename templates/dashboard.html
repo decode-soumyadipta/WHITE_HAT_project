@@ -4,15 +4,10 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h2">Dashboard</h1>
-        <div class="btn-group">
-            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="fas fa-building me-1"></i> Organization
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                {% for org in organizations %}
-                <li><a class="dropdown-item" href="{{ url_for('dashboard', organization_id=org.id) }}">{{ org.name }}</a></li>
-                {% endfor %}
-            </ul>
+        <div>
+            <a href="{{ url_for('profile') }}" class="btn btn-outline-primary">
+                <i class="fab fa-github me-1"></i> Manage GitHub Connections
+            </a>
         </div>
     </div>
     
@@ -23,7 +18,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-uppercase text-muted">Total Vulnerabilities</h6>
-                            <h2 class="mb-0">{{ vuln_stats.get('critical', 0) + vuln_stats.get('high', 0) + vuln_stats.get('medium', 0) + vuln_stats.get('low', 0) }}</h2>
+                            <h2 class="mb-0">{{ total_vulnerabilities }}</h2>
                         </div>
                         <div class="bg-primary text-white p-3 rounded">
                             <i class="fas fa-bug fa-2x"></i>
@@ -71,7 +66,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-uppercase text-muted">AI Agent Tests</h6>
-                            <h2 class="mb-0 text-primary">{{ test_case_stats.get('completed', 0) }}</h2>
+                            <h2 class="mb-0 text-primary">{{ test_case_stats.get('ai_generated', 0) }}</h2>
                         </div>
                         <div class="bg-warning text-white p-3 rounded">
                             <i class="fas fa-robot fa-2x"></i>
@@ -82,101 +77,56 @@
         </div>
     </div>
     
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card mb-4 border-0 shadow-sm">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Vulnerability Distribution</h5>
-                </div>
-                <div class="card-body">
-                    <div class="progress" style="height: 30px;">
-                        {% set total_vulns = (vuln_stats.get('critical', 0) + vuln_stats.get('high', 0) + vuln_stats.get('medium', 0) + vuln_stats.get('low', 0)) %}
-                        
-                        {% if vuln_stats.get('critical', 0) > 0 and total_vulns > 0 %}
-                        <div class="progress-bar bg-danger" style="width: {{ (vuln_stats.get('critical', 0) / total_vulns) * 100 }}%" role="progressbar">
-                            Critical ({{ vuln_stats.get('critical', 0) }})
-                        </div>
-                        {% endif %}
-                        
-                        {% if vuln_stats.get('high', 0) > 0 and total_vulns > 0 %}
-                        <div class="progress-bar bg-warning" style="width: {{ (vuln_stats.get('high', 0) / total_vulns) * 100 }}%" role="progressbar">
-                            High ({{ vuln_stats.get('high', 0) }})
-                        </div>
-                        {% endif %}
-                        
-                        {% if vuln_stats.get('medium', 0) > 0 and total_vulns > 0 %}
-                        <div class="progress-bar bg-info" style="width: {{ (vuln_stats.get('medium', 0) / total_vulns) * 100 }}%" role="progressbar">
-                            Medium ({{ vuln_stats.get('medium', 0) }})
-                        </div>
-                        {% endif %}
-                        
-                        {% if vuln_stats.get('low', 0) > 0 and total_vulns > 0 %}
-                        <div class="progress-bar bg-success" style="width: {{ (vuln_stats.get('low', 0) / total_vulns) * 100 }}%" role="progressbar">
-                            Low ({{ vuln_stats.get('low', 0) }})
-                        </div>
-                        {% endif %}
-                        
-                        {% if total_vulns == 0 %}
-                        <div class="progress-bar bg-secondary" style="width: 100%" role="progressbar">
-                            No vulnerabilities found
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mt-4">
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="me-2 bg-danger" style="width: 20px; height: 20px;"></div>
-                                    <div>Critical: {{ vuln_stats.get('critical', 0) }}</div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="me-2 bg-warning" style="width: 20px; height: 20px;"></div>
-                                    <div>High: {{ vuln_stats.get('high', 0) }}</div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="me-2 bg-info" style="width: 20px; height: 20px;"></div>
-                                    <div>Medium: {{ vuln_stats.get('medium', 0) }}</div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="me-2 bg-success" style="width: 20px; height: 20px;"></div>
-                                    <div>Low: {{ vuln_stats.get('low', 0) }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card border-0 shadow-sm">
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Recent Vulnerabilities</h5>
-                    <a href="{{ url_for('vulnerabilities') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                    <h5 class="mb-0">Connected GitHub Repositories</h5>
+                    <a href="{{ url_for('profile') }}" class="btn btn-sm btn-outline-primary">Add More</a>
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
-                        {% for vuln in recent_vulnerabilities %}
-                        <a href="{{ url_for('vulnerability_detail', vulnerability_id=vuln.id) }}" class="list-group-item list-group-item-action">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1">{{ vuln.title }}</h6>
-                                    <p class="mb-1 text-muted small">{{ vuln.description | truncate(100) }}</p>
-                                    <small>Discovered: {{ vuln.discovered_at }}</small>
-                                </div>
-                                <span class="badge bg-{% if vuln.severity == 'critical' %}danger{% elif vuln.severity == 'high' %}warning{% elif vuln.severity == 'medium' %}info{% else %}success{% endif %}">
-                                    {{ vuln.severity }}
+                        {% for repo in github_repos %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0">
+                                    <i class="fab fa-github me-1"></i> {{ repo.name }}
+                                </h6>
+                                <span class="badge bg-{% if repo.status == 'completed' or repo.status == 'Scanned' %}success{% else %}secondary{% endif %}">
+                                    {{ repo.status }}
                                 </span>
                             </div>
-                        </a>
+                            <p class="text-muted small mb-1">{{ repo.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">
+                                    {% if repo.last_scan and repo.last_scan != 'Never' %}
+                                    Last scan: {{ repo.last_scan }}
+                                    {% else %}
+                                    Not scanned yet
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="mt-2">
+                                <a href="{{ repo.url }}" target="_blank" class="btn btn-sm btn-outline-secondary me-1">
+                                    <i class="fas fa-external-link-alt me-1"></i> View
+                                </a>
+                                {% if not repo.id|string|startswith('new_') %}
+                                <a href="{{ url_for('scan_github_repo', repo_id=repo.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-shield-alt me-1"></i> Scan
+                                </a>
+                                {% else %}
+                                <a href="{{ url_for('github_repos') }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-plus me-1"></i> Connect
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
                         {% else %}
-                        <div class="list-group-item text-center text-muted py-3">
-                            No vulnerabilities found
+                        <div class="list-group-item text-center py-4">
+                            <p class="text-muted mb-3">No GitHub repositories connected</p>
+                            <a href="{{ url_for('profile') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fab fa-github me-1"></i> Connect GitHub
+                            </a>
                         </div>
                         {% endfor %}
                     </div>
@@ -184,83 +134,228 @@
             </div>
         </div>
         
-        <div class="col-lg-4">
+        <div class="col-md-8">
+            <div class="row">
+                <div class="col-md-6">
             <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0">Test Case Status</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Pending</span>
-                            <span>{{ test_case_stats.get('pending', 0) }}/{{ test_case_stats.get('total', 0) }}</span>
+                            <h5 class="mb-0">Severity Distribution</h5>
                         </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-secondary" role="progressbar" style="width: {% if test_case_stats.get('total', 0) > 0 %}{{ (test_case_stats.get('pending', 0) / test_case_stats.get('total', 1)) * 100 }}{% else %}0{% endif %}%"></div>
+                        <div class="card-body">
+                            <canvas id="severityChart" height="300"></canvas>
+                        </div>
                         </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Running</span>
-                            <span>{{ test_case_stats.get('running', 0) }}/{{ test_case_stats.get('total', 0) }}</span>
+                <div class="col-md-6">
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">CVSS Score Distribution</h5>
                         </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-warning" role="progressbar" style="width: {% if test_case_stats.get('total', 0) > 0 %}{{ (test_case_stats.get('running', 0) / test_case_stats.get('total', 1)) * 100 }}{% else %}0{% endif %}%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Completed</span>
-                            <span>{{ test_case_stats.get('completed', 0) }}/{{ test_case_stats.get('total', 0) }}</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {% if test_case_stats.get('total', 0) > 0 %}{{ (test_case_stats.get('completed', 0) / test_case_stats.get('total', 1)) * 100 }}{% else %}0{% endif %}%"></div>
+                        <div class="card-body">
+                            <canvas id="cvssChart" height="300"></canvas>
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Failed</span>
-                            <span>{{ test_case_stats.get('failed', 0) }}/{{ test_case_stats.get('total', 0) }}</span>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-danger" role="progressbar" style="width: {% if test_case_stats.get('total', 0) > 0 %}{{ (test_case_stats.get('failed', 0) / test_case_stats.get('total', 1)) * 100 }}{% else %}0{% endif %}%"></div>
                         </div>
                     </div>
                 </div>
             </div>
             
+    <div class="row">
+        <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">AI Agent Overview</h5>
-                    <a href="{{ url_for('ai_agent_automation') }}" class="btn btn-sm btn-outline-primary">Launch</a>
+                    <h5 class="mb-0">Recent Vulnerabilities</h5>
+                    <a href="{{ url_for('vulnerabilities') }}" class="btn btn-sm btn-outline-primary">View All</a>
                 </div>
-                <div class="card-body">
-                    <div class="text-center mb-4">
-                        <i class="fas fa-robot fa-3x text-primary mb-3"></i>
-                        <h5>Security Testing Automation</h5>
-                        <p class="text-muted">Generate and execute security tests using AI agents</p>
-                    </div>
-                    
-                    <div class="list-group">
-                        <a href="{{ url_for('ai_agent_automation') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            Run Vulnerability Scan
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                        <a href="{{ url_for('ai_agent_automation') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            Generate Test Cases
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                        <a href="{{ url_for('ai_agent_automation') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            Simulate Attacks
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Repository</th>
+                                    <th>Severity</th>
+                                    <th>CVSS</th>
+                                    <th>Status</th>
+                                    <th>Discovered</th>
+                                    <th>Source</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vuln in recent_vulnerabilities[:4] %}
+                                <tr>
+                                    <td>{{ vuln.id }}</td>
+                                    <td>
+                                        <a href="{{ url_for('vulnerability_detail', vulnerability_id=vuln.id) }}" class="text-decoration-none">
+                                            <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ vuln.title }}">
+                                                {{ vuln.title }}
+                                            </span>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if vuln.repository %}
+                                        <a href="{{ vuln.repository.url }}" target="_blank" class="text-decoration-none">
+                                            <span class="text-truncate d-inline-block" style="max-width: 150px;" title="{{ vuln.repository.name }}">
+                                                <i class="fab fa-github me-1"></i>{{ vuln.repository.name }}
+                                            </span>
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">Unknown</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if vuln.severity == 'critical' %}danger{% elif vuln.severity == 'high' %}warning{% elif vuln.severity == 'medium' %}primary{% else %}secondary{% endif %}">
+                                            {{ vuln.severity }}
+                                        </span>
+                                    </td>
+                                    <td>{{ vuln.cvss_score or 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if vuln.status == 'open' %}danger{% elif vuln.status == 'in_progress' %}warning{% else %}success{% endif %}">
+                                            {{ vuln.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ vuln.discovered_at }}</td>
+                                    <td>
+                                        {% if vuln.discovered_by == 'SHIELD' or 'AI' in vuln.discovered_by or 'Code Review' in vuln.discovered_by %}
+                                        <span class="badge bg-info text-dark">
+                                            <i class="fas fa-robot me-1"></i> AI
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-user me-1"></i> Manual
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('vulnerability_detail', vulnerability_id=vuln.id) }}" class="btn btn-outline-primary">View</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center py-4">
+                                        <p class="text-muted mb-0">No vulnerabilities found</p>
+                                        <small class="d-block mt-2">
+                                            <a href="{{ url_for('ai_agent_automation') }}" class="text-decoration-none">
+                                                <i class="fas fa-robot me-1"></i> Run an AI assessment to discover vulnerabilities
+                                            </a>
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Severity Chart
+    const severityCtx = document.getElementById('severityChart').getContext('2d');
+    const severityData = {
+        labels: ['Critical', 'High', 'Medium', 'Low'],
+        datasets: [{
+            label: 'Vulnerabilities by Severity',
+            data: [
+                {{ vuln_stats.get('critical', 0) }},
+                {{ vuln_stats.get('high', 0) }},
+                {{ vuln_stats.get('medium', 0) }},
+                {{ vuln_stats.get('low', 0) }}
+            ],
+            backgroundColor: [
+                'rgba(220, 53, 69, 0.8)',   // Critical - Red
+                'rgba(255, 193, 7, 0.8)',   // High - Yellow
+                'rgba(0, 123, 255, 0.8)',   // Medium - Blue
+                'rgba(40, 167, 69, 0.8)'    // Low - Green
+            ],
+            borderColor: [
+                'rgb(220, 53, 69)',
+                'rgb(255, 193, 7)',
+                'rgb(0, 123, 255)',
+                'rgb(40, 167, 69)'
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    new Chart(severityCtx, {
+        type: 'pie',
+        data: severityData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                title: {
+                    display: true,
+                    text: 'Vulnerabilities by Severity'
+                }
+            }
+        }
+    });
+    
+    // CVSS Score Chart
+    const cvssCtx = document.getElementById('cvssChart').getContext('2d');
+    
+    // Create arrays for CVSS data
+    var cvssScores = [];
+    var cvssLabels = [];
+    
+    {% for vuln in cvss_data %}
+        cvssScores.push({{ vuln.cvss_score }});
+        cvssLabels.push('{{ vuln.id }}');
+    {% endfor %}
+    
+    const cvssData = {
+        labels: cvssLabels,
+        datasets: [{
+            label: 'CVSS Scores',
+            data: cvssScores,
+            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        }]
+    };
+    
+    new Chart(cvssCtx, {
+        type: 'bar',
+        data: cvssData,
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 10,
+                    title: {
+                        display: true,
+                        text: 'CVSS Score'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Vulnerability ID'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'CVSS Scores of Identified Vulnerabilities'
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %} 
