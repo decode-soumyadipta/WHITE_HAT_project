@@ -1484,21 +1484,41 @@ def github_disconnect():
         return redirect(url_for('login'))
     
     try:
-        # Remove GitHub token from the database
+        # Get user information before disconnecting
         conn = get_db_connection()
-        conn.execute('UPDATE users SET github_token = NULL WHERE id = ?', (session['user_id'],))
+        user = conn.execute('SELECT username FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+        username = user['username'] if user else 'Unknown'
+        
+        # Log the disconnection attempt
+        logging.info(f"GitHub disconnection initiated for user {username} (ID: {session['user_id']})")
+        
+        # Delete all GitHub repositories associated with this user
+        cursor = conn.execute('DELETE FROM github_repos WHERE user_id = ?', (session['user_id'],))
+        deleted_repos_count = cursor.rowcount
+        logging.info(f"Deleted {deleted_repos_count} GitHub repositories for user {username}")
+        
+        # Remove GitHub token and OAuth state from the database
+        conn.execute('UPDATE users SET github_token = NULL, github_oauth_state = NULL WHERE id = ?', (session['user_id'],))
         conn.commit()
         conn.close()
         
-        # Remove from session
-        if 'github_token' in session:
-            session.pop('github_token', None)
-        session['github_connected'] = False
+        # Remove all GitHub-related data from session
+        for key in ['github_token', 'github_connected', 'github_oauth_state', 'pre_github_user_id', 
+                   'pre_github_username', 'pre_github_email']:
+            if key in session:
+                session.pop(key, None)
+        
+        # Force session to be saved
+        session.modified = True
         
         # Set success message
-        flash('GitHub account successfully disconnected', 'success')
+        if deleted_repos_count > 0:
+            flash(f'GitHub account successfully disconnected. {deleted_repos_count} repositories were removed.', 'success')
+        else:
+            flash('GitHub account successfully disconnected', 'success')
+            
     except Exception as e:
-        logging.error(f"Error disconnecting GitHub: {e}")
+        logging.error(f"Error disconnecting GitHub: {str(e)}")
         flash('An error occurred while disconnecting your GitHub account', 'danger')
     
     return redirect(url_for('profile'))
@@ -2894,18 +2914,44 @@ def github_login():
     # Store complete user session information
     conn = get_db_connection()
     user = conn.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],)).fetchone()
-    conn.close()
     
-    if user:
-        # Store all necessary user data to recreate session if needed
-        session['pre_github_user_id'] = session['user_id']
-        session['pre_github_username'] = user['username']
-        session['pre_github_email'] = user['email']
-        session.modified = True
+    if not user:
+        conn.close()
+        flash('User account not found. Please log in again.', 'danger')
+        session.clear()
+        return redirect(url_for('login'))
+    
+    # Store all necessary user data to recreate session if needed
+    session['pre_github_user_id'] = session['user_id']
+    session['pre_github_username'] = user['username']
+    session['pre_github_email'] = user['email'] if user['email'] else ''
+    
+    # Set a longer session lifetime for the OAuth flow
+    session.permanent = True
+    
+    # Force session to be saved immediately
+    session.modified = True
     
     # Generate a random state parameter to prevent CSRF attacks
     state = secrets.token_hex(16)
     session['github_oauth_state'] = state
+    
+    # Check if github_oauth_state column exists in users table
+    cursor = conn.execute("PRAGMA table_info(users)")
+    columns = [column[1] for column in cursor.fetchall()]
+    
+    # If column doesn't exist, add it
+    if 'github_oauth_state' not in columns:
+        conn.execute('ALTER TABLE users ADD COLUMN github_oauth_state TEXT')
+        conn.commit()
+    
+    # Store the state in the database as well for backup
+    conn.execute('UPDATE users SET github_oauth_state = ? WHERE id = ?', (state, session['user_id']))
+    conn.commit()
+    
+    # Log the OAuth initiation
+    logging.info(f"GitHub OAuth initiated for user {user['username']} (ID: {session['user_id']})")
+    conn.close()
     
     params = {
         'client_id': GITHUB_CLIENT_ID,
@@ -2919,76 +2965,103 @@ def github_login():
 
 @app.route('/github/callback')
 def github_callback():
+    # Get the state and code from the request
+    request_state = request.args.get('state')
+    code = request.args.get('code')
+    
+    # Log the callback received
+    logging.info(f"GitHub callback received with state: {request_state[:5]}... and code: {code[:5] if code else None}...")
+    
+    if not code or not request_state:
+        flash('Invalid response from GitHub. Missing code or state parameter.', 'danger')
+        return redirect(url_for('profile'))
+    
     # First, try to recover session from pre-stored data if user_id is missing
     if 'user_id' not in session and 'pre_github_user_id' in session:
         # If we have pre-stored user data, use it to restore the session
         if 'pre_github_user_id' in session and 'pre_github_username' in session:
             session['user_id'] = session['pre_github_user_id']
             session['username'] = session['pre_github_username']
+            session.permanent = True  # Ensure session persistence
             session.modified = True
             logging.info(f"Session restored for user {session['username']} from pre-stored data")
     
     # If still no user_id, try to get user from database using state parameter
-    if 'user_id' not in session and request.args.get('state'):
-        state = request.args.get('state')
+    if 'user_id' not in session and request_state:
         conn = get_db_connection()
-        # Find any user that might be associated with this state in recent sessions
-        users = conn.execute('SELECT * FROM users').fetchall()
+        # Find the user associated with this state in the database
+        user = conn.execute('SELECT * FROM users WHERE github_oauth_state = ?', (request_state,)).fetchone()
         conn.close()
         
-        # Log for debugging
-        logging.info(f"Attempting to recover session using state: {state}")
-        
-        # For now, just use the first user (in a real app, you'd have a better way to map states to users)
-        if users:
-            first_user = users[0]
-            session['user_id'] = first_user['id']
-            session['username'] = first_user['username']
+        if user:
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session.permanent = True  # Ensure session persistence
             session.modified = True
-            logging.info(f"Session recreated for user {first_user['username']} based on OAuth state")
+            logging.info(f"Session recreated for user {user['username']} based on OAuth state from database")
     
     # Final check for user_id
     if 'user_id' not in session:
-        flash('Your session has expired. Please log in again.', 'warning')
+        flash('Your session has expired. Please log in again and try connecting GitHub.', 'warning')
         return redirect(url_for('login'))
     
     # Get user ID and username from session
     user_id = session.get('user_id')
     username = session.get('username')
     
+    logging.info(f"Processing GitHub callback for user {username} (ID: {user_id})")
+    
     # Verify state parameter to prevent CSRF attacks
-    if 'github_oauth_state' not in session or session['github_oauth_state'] != request.args.get('state'):
-        flash('Invalid state parameter. Please try connecting to GitHub again.', 'danger')
-        return redirect(url_for('profile'))
+    # First check session state
+    session_state_valid = 'github_oauth_state' in session and session['github_oauth_state'] == request_state
+    
+    # If session state is invalid, check database state as backup
+    if not session_state_valid:
+        conn = get_db_connection()
+        user = conn.execute('SELECT github_oauth_state FROM users WHERE id = ?', (user_id,)).fetchone()
+        conn.close()
+        
+        if not user or user['github_oauth_state'] != request_state:
+            logging.warning(f"Invalid state parameter for user {username}. Session state: {session.get('github_oauth_state', 'None')[:5]}..., Request state: {request_state[:5]}...")
+            flash('Invalid state parameter. Please try connecting to GitHub again.', 'danger')
+            return redirect(url_for('profile'))
+        else:
+            logging.info(f"State validated from database for user {username}")
+    else:
+        logging.info(f"State validated from session for user {username}")
     
     # Exchange the code for an access token
-    code = request.args.get('code')
-    if not code:
-        flash('Authorization code not received from GitHub', 'danger')
+    try:
+        token_response = requests.post(
+            'https://github.com/login/oauth/access_token',
+            data={
+                'client_id': GITHUB_CLIENT_ID,
+                'client_secret': GITHUB_CLIENT_SECRET,
+                'code': code,
+                'redirect_uri': GITHUB_CALLBACK_URL
+            },
+            headers={'Accept': 'application/json'},
+            timeout=10  # Add timeout to prevent hanging
+        )
+        
+        token_data = token_response.json()
+        access_token = token_data.get('access_token')
+        
+        if not access_token:
+            error = token_data.get('error', 'Unknown error')
+            error_description = token_data.get('error_description', 'No description')
+            logging.error(f"GitHub token exchange failed: {error} - {error_description}")
+            flash(f'Failed to obtain access token from GitHub: {error_description}', 'danger')
+            return redirect(url_for('profile'))
+            
+    except Exception as e:
+        logging.error(f"Exception during GitHub token exchange: {str(e)}")
+        flash('Error connecting to GitHub. Please try again.', 'danger')
         return redirect(url_for('profile'))
     
-    # Request the access token
-    token_response = requests.post(
-        'https://github.com/login/oauth/access_token',
-        data={
-            'client_id': GITHUB_CLIENT_ID,
-            'client_secret': GITHUB_CLIENT_SECRET,
-            'code': code,
-            'redirect_uri': GITHUB_CALLBACK_URL
-        },
-        headers={'Accept': 'application/json'}
-    )
-    
-    token_data = token_response.json()
-    access_token = token_data.get('access_token')
-    
-    if not access_token:
-        flash('Failed to obtain access token from GitHub', 'danger')
-        return redirect(url_for('profile'))
-    
-    # Store the token in the database
+    # Store the token in the database and clear the oauth state
     conn = get_db_connection()
-    conn.execute('UPDATE users SET github_token = ? WHERE id = ?', (access_token, user_id))
+    conn.execute('UPDATE users SET github_token = ?, github_oauth_state = NULL WHERE id = ?', (access_token, user_id))
     conn.commit()
     conn.close()
     
@@ -2997,7 +3070,10 @@ def github_callback():
     session['username'] = username
     session['github_token'] = access_token
     session['github_connected'] = True
+    session.permanent = True  # Ensure session persistence
     session.modified = True
+    
+    logging.info(f"GitHub token stored successfully for user {username}")
     
     # Clean up temporary session data
     for key in ['pre_github_user_id', 'pre_github_username', 'pre_github_email', 'github_oauth_state']:
@@ -3028,85 +3104,176 @@ def github_repos():
     
     if not user['github_token']:
         conn.close()
+        flash('GitHub account not connected. Please connect your GitHub account first.', 'warning')
         return redirect(url_for('profile', error='GitHub not connected'))
     
     # Ensure GitHub token is in session
     session['github_token'] = user['github_token']
     session['github_connected'] = True
+    session.modified = True
     
-    # Fetch repositories from GitHub
-    user_repos_response = requests.get(
-        'https://api.github.com/user/repos',
-        headers={
-            'Authorization': f'token {user["github_token"]}',
-            'Accept': 'application/vnd.github.v3+json'
-        }
-    )
-    
-    if user_repos_response.status_code != 200:
-        conn.close()
-        # If token is invalid, clear it
-        if user_repos_response.status_code == 401:
-            conn = get_db_connection()
-            conn.execute('UPDATE users SET github_token = NULL WHERE id = ?', (session['user_id'],))
-            conn.commit()
+    # Fetch repositories from GitHub with additional details
+    try:
+        user_repos_response = requests.get(
+            'https://api.github.com/user/repos?sort=updated&per_page=100',
+            headers={
+                'Authorization': f'token {user["github_token"]}',
+                'Accept': 'application/vnd.github.v3+json'
+            },
+            timeout=10
+        )
+        
+        if user_repos_response.status_code != 200:
+            # Log the error details
+            logging.error(f"GitHub API error: {user_repos_response.status_code} - {user_repos_response.text}")
+            
+            # If token is invalid, clear it
+            if user_repos_response.status_code == 401:
+                conn = get_db_connection()
+                conn.execute('UPDATE users SET github_token = NULL WHERE id = ?', (session['user_id'],))
+                conn.commit()
+                conn.close()
+                session.pop('github_token', None)
+                session['github_connected'] = False
+                flash('Your GitHub authorization has expired. Please connect again.', 'warning')
+                return redirect(url_for('profile', error='GitHub token expired'))
+            
             conn.close()
-            session.pop('github_token', None)
-            session['github_connected'] = False
-            flash('Your GitHub authorization has expired. Please connect again.', 'warning')
-        return redirect(url_for('profile', error='Failed to fetch repositories from GitHub'))
+            flash(f'Failed to fetch repositories from GitHub: {user_repos_response.status_code}', 'danger')
+            return redirect(url_for('profile', error='GitHub API error'))
+        
+        github_repos = user_repos_response.json()
+        
+        # Enhance repository data with additional information
+        for repo in github_repos:
+            # Format dates for better display
+            if 'updated_at' in repo and repo['updated_at']:
+                # Convert ISO format to more readable format
+                updated_at = datetime.fromisoformat(repo['updated_at'].replace('Z', '+00:00'))
+                repo['updated_at'] = updated_at.strftime('%Y-%m-%d %H:%M')
+            
+            # Ensure all repos have these fields to prevent template errors
+            if 'description' not in repo or repo['description'] is None:
+                repo['description'] = ''
+            
+            if 'language' not in repo or repo['language'] is None:
+                repo['language'] = 'Unknown'
+            
+            # Add default values for star and fork counts if not present
+            if 'stargazers_count' not in repo:
+                repo['stargazers_count'] = 0
+                
+            if 'forks_count' not in repo:
+                repo['forks_count'] = 0
     
-    github_repos = user_repos_response.json()
+    except Exception as e:
+        logging.error(f"Exception fetching GitHub repositories: {str(e)}")
+        conn.close()
+        flash(f'Error connecting to GitHub API: {str(e)}', 'danger')
+        return redirect(url_for('profile', error='GitHub connection error'))
     
     # Get already saved repos
-    saved_repos = conn.execute('SELECT repo_name FROM github_repos WHERE user_id = ?', (session['user_id'],)).fetchall()
+    saved_repos = conn.execute('SELECT repo_name, status FROM github_repos WHERE user_id = ?', (session['user_id'],)).fetchall()
     saved_repo_names = [repo['repo_name'] for repo in saved_repos]
     
+    # Get repo statuses for display
+    repo_statuses = {repo['repo_name']: repo['status'] for repo in saved_repos}
+    
     conn.close()
+    
+    # Sort repositories by update date (newest first)
+    github_repos.sort(key=lambda x: x.get('updated_at', ''), reverse=True)
     
     return render_template(
         'github_repos.html',
         repos=github_repos,
         saved_repo_names=saved_repo_names,
+        repo_statuses=repo_statuses,
         active_page='profile'
     )
 
 @app.route('/github/add_repo', methods=['POST'])
 def add_github_repo():
     if 'user_id' not in session:
+        flash('Please log in to add repositories', 'warning')
         return redirect(url_for('login'))
     
     repo_name = request.form.get('repo_name')
     repo_url = request.form.get('repo_url')
     repo_id = request.form.get('repo_id', '')
+    repo_language = request.form.get('repo_language', 'Unknown')
+    repo_description = request.form.get('repo_description', '')
+    repo_visibility = request.form.get('repo_visibility', 'public')
     
     if not repo_name or not repo_url:
+        flash('Repository information is incomplete', 'danger')
         return redirect(url_for('github_repos', error='Repository information is incomplete'))
     
-    conn = get_db_connection()
-    
-    # Check if repo already exists
-    existing = conn.execute(
-        'SELECT id FROM github_repos WHERE user_id = ? AND repo_name = ?', 
-        (session['user_id'], repo_name)
-    ).fetchone()
-    
-    if not existing:
+    try:
+        conn = get_db_connection()
+        
+        # Check if repo already exists
+        existing = conn.execute(
+            'SELECT id FROM github_repos WHERE user_id = ? AND repo_name = ?', 
+            (session['user_id'], repo_name)
+        ).fetchone()
+        
+        if existing:
+            conn.close()
+            flash(f'Repository "{repo_name}" is already added to your account', 'info')
+            return redirect(url_for('github_repos'))
+        
+        # Check if the github_repos table has all the necessary columns
+        cursor = conn.execute("PRAGMA table_info(github_repos)")
+        columns = [column[1] for column in cursor.fetchall()]
+        
+        # Add missing columns if needed
+        if 'language' not in columns:
+            conn.execute('ALTER TABLE github_repos ADD COLUMN language TEXT')
+        if 'description' not in columns:
+            conn.execute('ALTER TABLE github_repos ADD COLUMN description TEXT')
+        if 'visibility' not in columns:
+            conn.execute('ALTER TABLE github_repos ADD COLUMN visibility TEXT')
+        if 'added_at' not in columns:
+            conn.execute('ALTER TABLE github_repos ADD COLUMN added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+        
         # Store repo with github's repo ID in our database
         github_id = repo_id.replace('temp_', '') if repo_id.startswith('temp_') else repo_id
         
         conn.execute(
-            'INSERT INTO github_repos (user_id, repo_name, repo_url, status, github_id) VALUES (?, ?, ?, ?, ?)',
-            (session['user_id'], repo_name, repo_url, 'not_scanned', github_id)
+            '''INSERT INTO github_repos 
+               (user_id, repo_name, repo_url, status, github_id, language, description, visibility, added_at) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)''',
+            (session['user_id'], repo_name, repo_url, 'not_scanned', github_id, 
+             repo_language, repo_description, repo_visibility)
         )
         conn.commit()
         
         # Log the addition
         logging.info(f"Added repository {repo_name} with GitHub ID {github_id} for user {session['user_id']}")
-    
-    conn.close()
-    flash(f'Repository "{repo_name}" added successfully!', 'success')
-    return redirect(url_for('profile'))
+        
+        conn.close()
+        flash(f'Repository "{repo_name}" added successfully! It is now ready for security scanning.', 'success')
+        
+        # Check if we should redirect to scan immediately
+        if request.form.get('scan_immediately') == 'true':
+            # Get the repo ID we just inserted
+            conn = get_db_connection()
+            repo = conn.execute(
+                'SELECT id FROM github_repos WHERE user_id = ? AND repo_name = ?',
+                (session['user_id'], repo_name)
+            ).fetchone()
+            conn.close()
+            
+            if repo:
+                return redirect(url_for('scan_github_repo', repo_id=repo['id']))
+        
+        return redirect(url_for('github_repos'))
+        
+    except Exception as e:
+        logging.error(f"Error adding repository {repo_name}: {str(e)}")
+        flash(f'Error adding repository: {str(e)}', 'danger')
+        return redirect(url_for('github_repos', error='Database error'))
 
 @app.route('/github/scan_repo/<int:repo_id>')
 def scan_github_repo(repo_id):
@@ -3334,4 +3501,4 @@ def startswith(value, prefix):
     return False
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True)
